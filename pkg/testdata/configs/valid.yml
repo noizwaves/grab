@@ -1,0 +1,7 @@
+binaries:
+  - name: foo
+    source: https://foo.com/{{ .Version }}/bin
+    version: "1.2.0"
+  - name: bar
+    source: https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-bin
+    version: "0.16.5"
