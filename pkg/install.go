@@ -30,7 +30,7 @@ func getSourceUrl(binary configBinary) (string, error) {
 	return output.String(), nil
 }
 
-func unTgzFirstFile(data []byte) ([]byte, error) {
+func unTgzFileNamed(binaryName string, data []byte) ([]byte, error) {
 	decompressed, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("Error decompressing Gzipped data: %w", err)
@@ -51,6 +51,11 @@ func unTgzFirstFile(data []byte) ([]byte, error) {
 
 		switch header.Typeflag {
 		case tar.TypeReg:
+			_, archivedName := path.Split(header.Name)
+			if archivedName != binaryName {
+				continue
+			}
+
 			outData, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, fmt.Errorf("Error extracting file from tar: %w", err)
@@ -59,7 +64,7 @@ func unTgzFirstFile(data []byte) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("No files found in tar archive")
+	return nil, fmt.Errorf("No file named %q found in archive", binaryName)
 }
 
 func unGzip(data []byte) ([]byte, error) {
@@ -71,7 +76,7 @@ func unGzip(data []byte) ([]byte, error) {
 	return io.ReadAll(decompressed)
 }
 
-func fetchBinaryData(sourceUrl string) ([]byte, error) {
+func fetchBinaryData(binaryName string, sourceUrl string) ([]byte, error) {
 	resp, err := http.Get(sourceUrl)
 	if err != nil {
 		return nil, fmt.Errorf("Error requesting binary: %w", err)
@@ -83,7 +88,7 @@ func fetchBinaryData(sourceUrl string) ([]byte, error) {
 	}
 
 	if strings.HasSuffix(sourceUrl, ".tar.gz") || strings.HasSuffix(sourceUrl, ".tgz") {
-		data, err = unTgzFirstFile(data)
+		data, err = unTgzFileNamed(binaryName, data)
 
 		if err != nil {
 			return nil, fmt.Errorf("Error extracting binary from tgz archive: %w", err)
@@ -126,7 +131,7 @@ func Install() error {
 			return fmt.Errorf("Error getting source url for %s: %w", binary.Name, err)
 		}
 
-		data, err := fetchBinaryData(sourceUrl)
+		data, err := fetchBinaryData(binary.Name, sourceUrl)
 		if err != nil {
 			return fmt.Errorf("Error downloading binary for %s: %w", binary.Name, err)
 		}
