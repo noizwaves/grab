@@ -18,8 +18,18 @@ func TestParseConfigValid(t *testing.T) {
 			},
 			{
 				Name:    "bar",
-				Source:  "https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-bin",
+				Source:  "https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-{{ .Platform }}-{{ .Arch }}",
 				Version: "0.16.5",
+				Platforms: map[configPlatformKey]configPlatformValue{
+					"linux": {
+						"amd64": []string{"unknown-linux-musl", "x86_64"},
+						"arm64": []string{"unknown-linux-gnu", "aarch64"},
+					},
+					"darwin": {
+						"amd64": []string{"apple-darwin", "x86_64"},
+						"arm64": []string{"apple-darwin", "aarch64"},
+					},
+				},
 			},
 		},
 	}

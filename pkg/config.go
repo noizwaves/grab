@@ -15,10 +15,18 @@ type configRoot struct {
 }
 
 type configBinary struct {
-	Name    string `yaml:"name"`
-	Source  string `yaml:"source"`
-	Version string `yaml:"version"`
+	Name      string                                    `yaml:"name"`
+	Source    string                                    `yaml:"source"`
+	Platforms map[configPlatformKey]configPlatformValue `yaml:"platforms,omitempty"`
+	Version   string                                    `yaml:"version"`
 }
+
+type configArchKey = string
+type configPlatformKey = string
+
+type configPlatformValue = map[configArchKey]configPlatformArchOverride
+
+type configPlatformArchOverride = []string // [platformOveride, archOverride]
 
 func parseConfig(path string) (configRoot, error) {
 	yamlFile, err := os.ReadFile(path)

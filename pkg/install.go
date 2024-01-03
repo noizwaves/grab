@@ -10,25 +10,9 @@ import (
 	"os"
 	"path"
 	"strings"
-	"text/template"
 )
 
 const localBinPath = ".local/bin"
-
-func getSourceUrl(binary configBinary) (string, error) {
-	tmpl, err := template.New("sourceUrl" + binary.Name).Parse(binary.Source)
-	if err != nil {
-		return "", fmt.Errorf("Error parsing Source as template: %w", err)
-	}
-
-	var output bytes.Buffer
-	err = tmpl.Execute(&output, binary)
-	if err != nil {
-		return "", fmt.Errorf("Error rendering Source as template: %w", err)
-	}
-
-	return output.String(), nil
-}
 
 func unTgzFileNamed(binaryName string, data []byte) ([]byte, error) {
 	decompressed, err := gzip.NewReader(bytes.NewBuffer(data))
