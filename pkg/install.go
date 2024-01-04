@@ -1,9 +1,7 @@
 package pkg
 
 import (
-	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,52 +11,6 @@ import (
 )
 
 const localBinPath = ".local/bin"
-
-func unTgzFileNamed(binaryName string, data []byte) ([]byte, error) {
-	decompressed, err := gzip.NewReader(bytes.NewBuffer(data))
-	if err != nil {
-		return nil, fmt.Errorf("Error decompressing Gzipped data: %w", err)
-	}
-
-	tarReader := tar.NewReader(decompressed)
-
-	for {
-		header, err := tarReader.Next()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("Error extracting from tar: %w", err)
-		}
-
-		switch header.Typeflag {
-		case tar.TypeReg:
-			_, archivedName := path.Split(header.Name)
-			if archivedName != binaryName {
-				continue
-			}
-
-			outData, err := io.ReadAll(tarReader)
-			if err != nil {
-				return nil, fmt.Errorf("Error extracting file from tar: %w", err)
-			}
-			return outData, nil
-		}
-	}
-
-	return nil, fmt.Errorf("No file named %q found in archive", binaryName)
-}
-
-func unGzip(data []byte) ([]byte, error) {
-	decompressed, err := gzip.NewReader(bytes.NewBuffer(data))
-	if err != nil {
-		return nil, fmt.Errorf("Error decompressing Gzipped data: %w", err)
-	}
-
-	return io.ReadAll(decompressed)
-}
 
 func fetchBinaryData(binaryName string, sourceUrl string) ([]byte, error) {
 	resp, err := http.Get(sourceUrl)
@@ -72,13 +24,13 @@ func fetchBinaryData(binaryName string, sourceUrl string) ([]byte, error) {
 	}
 
 	if strings.HasSuffix(sourceUrl, ".tar.gz") || strings.HasSuffix(sourceUrl, ".tgz") {
-		data, err = unTgzFileNamed(binaryName, data)
+		data, err = unTgzFileNamed(binaryName, bytes.NewBuffer(data))
 
 		if err != nil {
 			return nil, fmt.Errorf("Error extracting binary from tgz archive: %w", err)
 		}
 	} else if strings.HasSuffix(sourceUrl, ".gz") {
-		data, err = unGzip(data)
+		data, err = unGzip(bytes.NewBuffer(data))
 
 		if err != nil {
 			return nil, fmt.Errorf("Error extracting binary from gzip archive: %w", err)
