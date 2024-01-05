@@ -62,7 +62,7 @@ func Install() error {
 		fmt.Printf("Installing %s...\n", binary.Name)
 
 		// download and extract target URL
-		sourceUrl, err := getSourceUrl(binary)
+		sourceUrl, err := renderSourceUrl(binary)
 		if err != nil {
 			return fmt.Errorf("Error getting source url for %s: %w", binary.Name, err)
 		}

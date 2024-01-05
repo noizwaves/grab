@@ -32,7 +32,7 @@ func newUrlViewModel(binary configBinary) urlViewModel {
 	}
 }
 
-func getSourceUrl(binary configBinary) (string, error) {
+func renderSourceUrl(binary configBinary) (string, error) {
 	tmpl, err := template.New("sourceUrl" + binary.Name).Parse(binary.Source)
 	if err != nil {
 		return "", fmt.Errorf("Error parsing Source as template: %w", err)
