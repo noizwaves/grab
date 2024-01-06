@@ -1,0 +1,13 @@
+pre-commit:
+  commands:
+    test:
+      glob: "*.go"
+      run: go test -count=0 ./...
+
+skip_output:
+  - meta
+  - summary
+  - empty_summary
+  - execution
+  - success
+  - skips
