@@ -11,17 +11,20 @@ type urlViewModel struct {
 	Version  string
 	Platform string
 	Arch     string
+	Ext      string
 }
 
 func newUrlViewModel(binary configBinary) urlViewModel {
 	version := binary.Version
 	platform := runtime.GOOS
 	arch := runtime.GOARCH
+	ext := ""
 
 	if pOverrides, ok := binary.Platforms[runtime.GOOS]; ok {
 		if aOverrides, ok := pOverrides[runtime.GOARCH]; ok {
 			platform = aOverrides[0]
 			arch = aOverrides[1]
+			ext = aOverrides[2]
 		}
 	}
 
@@ -29,6 +32,7 @@ func newUrlViewModel(binary configBinary) urlViewModel {
 		Version:  version,
 		Platform: platform,
 		Arch:     arch,
+		Ext:      ext,
 	}
 }
 

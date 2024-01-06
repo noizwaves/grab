@@ -24,7 +24,7 @@ func TestRenderSourceUrl(t *testing.T) {
 
 	t.Run("AllVariables", func(t *testing.T) {
 		binary := base
-		binary.Source = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}"
+		binary.Source = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 
 		result, err := renderSourceUrl(binary)
 
@@ -35,17 +35,17 @@ func TestRenderSourceUrl(t *testing.T) {
 
 	t.Run("WithOverrides", func(t *testing.T) {
 		binary := base
-		binary.Source = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}"
+		binary.Source = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 		binary.Platforms = map[string]map[string][]string{
 			runtime.GOOS: {
-				runtime.GOARCH: {"QuantumOS", "200qbit"},
+				runtime.GOARCH: {"QuantumOS", "200qbit", ".zip"},
 			},
 		}
 
 		result, err := renderSourceUrl(binary)
 
 		assert.NoError(t, err)
-		expected := "https://foo/1.2.3/foo-QuantumOS-200qbit"
+		expected := "https://foo/1.2.3/foo-QuantumOS-200qbit.zip"
 		assert.Equal(t, expected, result)
 	})
 
