@@ -10,11 +10,11 @@ func TestBinaryGetUrl(t *testing.T) {
 	base := Binary{
 		Name:        "foo",
 		Version:     "1.2.3",
-		TemplateUrl: "https://foo/{{ .Version }}/foo",
+		TemplateURL: "https://foo/{{ .Version }}/foo",
 	}
 
 	t.Run("Simple", func(t *testing.T) {
-		result, err := base.GetUrl("linux", "arm64")
+		result, err := base.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
 		assert.Equal(t, "https://foo/1.2.3/foo", result)
@@ -22,9 +22,9 @@ func TestBinaryGetUrl(t *testing.T) {
 
 	t.Run("AllVariables", func(t *testing.T) {
 		binary := base
-		binary.TemplateUrl = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
+		binary.TemplateURL = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 
-		result, err := binary.GetUrl("linux", "arm64")
+		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
 		assert.Equal(t, "https://foo/1.2.3/foo-linux-arm64", result)
@@ -32,7 +32,7 @@ func TestBinaryGetUrl(t *testing.T) {
 
 	t.Run("WithOverrides", func(t *testing.T) {
 		binary := base
-		binary.TemplateUrl = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
+		binary.TemplateURL = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 		binary.Overrides = map[string]Override{
 			"linux,arm64": {
 				Platform:     "QuantumOS",
@@ -41,7 +41,7 @@ func TestBinaryGetUrl(t *testing.T) {
 			},
 		}
 
-		result, err := binary.GetUrl("linux", "arm64")
+		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
 		assert.Equal(t, "https://foo/1.2.3/foo-QuantumOS-200qbit.zip", result)
@@ -49,19 +49,19 @@ func TestBinaryGetUrl(t *testing.T) {
 
 	t.Run("InvalidTemplate", func(t *testing.T) {
 		binary := base
-		binary.TemplateUrl = "https://foo/{{ .Version"
+		binary.TemplateURL = "https://foo/{{ .Version"
 
-		_, err := binary.GetUrl("linux", "arm64")
+		_, err := binary.GetURL("linux", "arm64")
 
-		assert.ErrorContains(t, err, "Error parsing source template")
+		assert.ErrorContains(t, err, "error parsing source template")
 	})
 
 	t.Run("InvalidVariable", func(t *testing.T) {
 		binary := base
-		binary.TemplateUrl = "https://foo/{{ .DoesNotExist }}"
+		binary.TemplateURL = "https://foo/{{ .DoesNotExist }}"
 
-		_, err := binary.GetUrl("linux", "arm64")
+		_, err := binary.GetURL("linux", "arm64")
 
-		assert.ErrorContains(t, err, "Error rendering source template")
+		assert.ErrorContains(t, err, "error rendering source template")
 	})
 }

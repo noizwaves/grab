@@ -8,7 +8,7 @@ import (
 )
 
 func TestUnTgzFileNamedValid(t *testing.T) {
-	for _, tc := range []struct {
+	for _, testCase := range []struct {
 		Name           string
 		BinaryName     string
 		ExpectedErr    string
@@ -22,41 +22,41 @@ func TestUnTgzFileNamedValid(t *testing.T) {
 		{
 			Name:        "Different",
 			BinaryName:  "other",
-			ExpectedErr: "No file named \"other\" found in archive",
+			ExpectedErr: "no file named \"other\" found in archive",
 		},
 	} {
-		t.Run(tc.Name, func(t *testing.T) {
-			f, err := os.Open("testdata/archives/binary.tgz")
+		t.Run(testCase.Name, func(t *testing.T) {
+			file, err := os.Open("testdata/archives/binary.tgz")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.Close()
+			defer file.Close()
 
-			result, err := unTgzFileNamed(tc.BinaryName, f)
+			result, err := unTgzFileNamed(testCase.BinaryName, file)
 
-			if tc.ExpectedResult != "" {
-				assert.Equal(t, []byte(tc.ExpectedResult), result)
+			if testCase.ExpectedResult != "" {
+				assert.Equal(t, []byte(testCase.ExpectedResult), result)
 			} else {
-				assert.ErrorContains(t, err, tc.ExpectedErr)
+				assert.ErrorContains(t, err, testCase.ExpectedErr)
 			}
 		})
 	}
 }
 
 func TestUnTgzFileNamedInvalid(t *testing.T) {
-	f, err := os.Open("testdata/archives/binary")
+	file, err := os.Open("testdata/archives/binary")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	_, err = unTgzFileNamed("binary", f)
+	_, err = unTgzFileNamed("binary", file)
 
-	assert.ErrorContains(t, err, "Error decompressing Gzipped data")
+	assert.ErrorContains(t, err, "error decompressing Gzipped data")
 }
 
 func TestUnZipFileNamedValid(t *testing.T) {
-	for _, tc := range []struct {
+	for _, testCase := range []struct {
 		Name           string
 		BinaryName     string
 		ExpectedErr    string
@@ -70,49 +70,48 @@ func TestUnZipFileNamedValid(t *testing.T) {
 		{
 			Name:        "Different",
 			BinaryName:  "other",
-			ExpectedErr: "No file named \"other\" found in archive",
+			ExpectedErr: "no file named \"other\" found in archive",
 		},
 	} {
-		t.Run(tc.Name, func(t *testing.T) {
-			f, err := os.Open("testdata/archives/binary.zip")
+		t.Run(testCase.Name, func(t *testing.T) {
+			file, err := os.Open("testdata/archives/binary.zip")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.Close()
+			defer file.Close()
 
-			result, err := unZipFileNamed(tc.BinaryName, f)
+			result, err := unZipFileNamed(testCase.BinaryName, file)
 
-			if tc.ExpectedResult != "" {
+			if testCase.ExpectedResult != "" {
 				assert.NoError(t, err)
-				assert.Equal(t, []byte(tc.ExpectedResult), result)
+				assert.Equal(t, []byte(testCase.ExpectedResult), result)
 			} else {
-				assert.ErrorContains(t, err, tc.ExpectedErr)
+				assert.ErrorContains(t, err, testCase.ExpectedErr)
 			}
 		})
 	}
 }
 
 func TestUnZipFileNamedInvalid(t *testing.T) {
-	f, err := os.Open("testdata/archives/binary")
+	file, err := os.Open("testdata/archives/binary")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	_, err = unZipFileNamed("binary", f)
+	_, err = unZipFileNamed("binary", file)
 
-	assert.ErrorContains(t, err, "Error decompressing Zipped data")
+	assert.ErrorContains(t, err, "error decompressing Zipped data")
 }
 
 func TestUnGzipValid(t *testing.T) {
-	f, err := os.Open("testdata/archives/binary.gz")
+	file, err := os.Open("testdata/archives/binary.gz")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	result, err := unGzip(f)
-
+	result, err := unGzip(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,13 +120,13 @@ func TestUnGzipValid(t *testing.T) {
 }
 
 func TestUnGzipInvalid(t *testing.T) {
-	f, err := os.Open("testdata/archives/binary")
+	file, err := os.Open("testdata/archives/binary")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	_, err = unGzip(f)
+	_, err = unGzip(file)
 
-	assert.ErrorContains(t, err, "Error decompressing Gzipped data")
+	assert.ErrorContains(t, err, "error decompressing Gzipped data")
 }

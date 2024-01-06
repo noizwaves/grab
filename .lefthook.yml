@@ -3,6 +3,9 @@ pre-commit:
     test:
       glob: "*.go"
       run: go test -count=0 ./...
+    lint:
+      glob: "*.go"
+      run: golangci-lint run ./...
 
 skip_output:
   - meta

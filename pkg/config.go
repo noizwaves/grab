@@ -21,8 +21,10 @@ type configBinary struct {
 	Version   string                                    `yaml:"version"`
 }
 
-type configArchKey = string
-type configPlatformKey = string
+type (
+	configArchKey     = string
+	configPlatformKey = string
+)
 
 type configPlatformValue = map[configArchKey]configPlatformArchOverride
 
@@ -31,13 +33,13 @@ type configPlatformArchOverride = [3]string // [platformOveride, archOverride, e
 func parseConfig(path string) (configRoot, error) {
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
-		return configRoot{}, fmt.Errorf("Error reading config file: %w", err)
+		return configRoot{}, fmt.Errorf("error reading config file: %w", err)
 	}
 
 	output := configRoot{}
 	err = yaml.Unmarshal(yamlFile, &output)
 	if err != nil {
-		return configRoot{}, fmt.Errorf("Error parsing config YAML: %w", err)
+		return configRoot{}, fmt.Errorf("error parsing config YAML: %w", err)
 	}
 
 	return output, nil
@@ -46,6 +48,5 @@ func parseConfig(path string) (configRoot, error) {
 func loadConfig(homeDir string) (configRoot, error) {
 	absPath := path.Join(homeDir, configPath)
 
-	// TODO: validate config here
 	return parseConfig(absPath)
 }

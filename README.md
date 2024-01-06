@@ -31,3 +31,9 @@ binaries:
     amd64: [apple-darwin, x86_64, zip]
     arm64: [apple-darwin, aarch64, zip]
   ```
+
+## Development
+
+1. Install `goenv` and specified Go version
+1. Install `golangci-lint`: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2`
+1. Install `gofumpt`: `go install mvdan.cc/gofumpt@latest`

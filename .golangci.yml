@@ -1,0 +1,27 @@
+# https://golangci-lint.run/usage/configuration/
+run:
+  allow-parallel-runners: true
+
+linters:
+  enable-all: true
+  disable:
+    - depguard
+    - forbidigo
+    - goerr113
+    - paralleltest
+    - wsl
+    - exhaustruct
+    - testpackage # allow testing private methods
+    - testifylint # follow on this one
+
+    # deprecated
+    - nosnakecase
+    - maligned
+    - structcheck
+    - ifshort
+    - deadcode
+    - varcheck
+    - interfacer
+    - exhaustivestruct
+    - golint
+    - scopelint

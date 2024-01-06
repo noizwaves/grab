@@ -15,7 +15,7 @@ type Override struct {
 type Binary struct {
 	Name        string
 	Version     string
-	TemplateUrl string
+	TemplateURL string
 	Overrides   map[string]Override
 }
 
@@ -35,23 +35,23 @@ func NewBinary(config configBinary) (Binary, error) {
 	return Binary{
 		Name:        config.Name,
 		Version:     config.Version,
-		TemplateUrl: config.Source,
+		TemplateURL: config.Source,
 		Overrides:   overrides,
 	}, nil
 }
 
-func (b *Binary) GetUrl(platform, arch string) (string, error) {
-	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(b.TemplateUrl)
+func (b *Binary) GetURL(platform, arch string) (string, error) {
+	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(b.TemplateURL)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing source template: %w", err)
+		return "", fmt.Errorf("error parsing source template: %w", err)
 	}
 
-	vm := newUrlViewModel(b, platform, arch)
+	vm := newURLViewModel(b, platform, arch)
 
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, vm)
 	if err != nil {
-		return "", fmt.Errorf("Error rendering source template: %w", err)
+		return "", fmt.Errorf("error rendering source template: %w", err)
 	}
 
 	return output.String(), nil
@@ -62,9 +62,9 @@ func (b *Binary) getOveride(platform, arch string) (Override, bool) {
 
 	if over, ok := b.Overrides[key]; ok {
 		return over, true
-	} else {
-		return Override{}, false
 	}
+
+	return Override{}, false
 }
 
 type urlViewModel struct {
@@ -74,7 +74,7 @@ type urlViewModel struct {
 	Ext      string
 }
 
-func newUrlViewModel(binary *Binary, platform, arch string) urlViewModel {
+func newURLViewModel(binary *Binary, platform, arch string) urlViewModel {
 	ext := ""
 	if over, ok := binary.getOveride(platform, arch); ok {
 		platform = over.Platform
