@@ -55,6 +55,55 @@ func TestUnTgzFileNamedInvalid(t *testing.T) {
 	assert.ErrorContains(t, err, "Error decompressing Gzipped data")
 }
 
+func TestUnZipFileNamedValid(t *testing.T) {
+	for _, tc := range []struct {
+		Name           string
+		BinaryName     string
+		ExpectedErr    string
+		ExpectedResult string
+	}{
+		{
+			Name:           "Matches",
+			BinaryName:     "binary",
+			ExpectedResult: "foobar\n",
+		},
+		{
+			Name:        "Different",
+			BinaryName:  "other",
+			ExpectedErr: "No file named \"other\" found in archive",
+		},
+	} {
+		t.Run(tc.Name, func(t *testing.T) {
+			f, err := os.Open("testdata/archives/binary.zip")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+
+			result, err := unZipFileNamed(tc.BinaryName, f)
+
+			if tc.ExpectedResult != "" {
+				assert.NoError(t, err)
+				assert.Equal(t, []byte(tc.ExpectedResult), result)
+			} else {
+				assert.ErrorContains(t, err, tc.ExpectedErr)
+			}
+		})
+	}
+}
+
+func TestUnZipFileNamedInvalid(t *testing.T) {
+	f, err := os.Open("testdata/archives/binary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	_, err = unZipFileNamed("binary", f)
+
+	assert.ErrorContains(t, err, "Error decompressing Zipped data")
+}
+
 func TestUnGzipValid(t *testing.T) {
 	f, err := os.Open("testdata/archives/binary.gz")
 	if err != nil {

@@ -35,6 +35,12 @@ func fetchBinaryData(binaryName string, sourceUrl string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Error extracting binary from gzip archive: %w", err)
 		}
+	} else if strings.HasSuffix(sourceUrl, ".zip") {
+		data, err = unZipFileNamed(binaryName, bytes.NewBuffer(data))
+
+		if err != nil {
+			return nil, fmt.Errorf("Error extracting binary from zip archive: %w", err)
+		}
 	}
 
 	return data, nil
