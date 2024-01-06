@@ -26,7 +26,7 @@ type configPlatformKey = string
 
 type configPlatformValue = map[configArchKey]configPlatformArchOverride
 
-type configPlatformArchOverride = []string // [platformOveride, archOverride]
+type configPlatformArchOverride = [3]string // [platformOveride, archOverride, extOverride]
 
 func parseConfig(path string) (configRoot, error) {
 	yamlFile, err := os.ReadFile(path)
@@ -43,13 +43,9 @@ func parseConfig(path string) (configRoot, error) {
 	return output, nil
 }
 
-func loadConfig() (configRoot, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return configRoot{}, fmt.Errorf("Error determining home directory: %w", err)
-	}
-
+func loadConfig(homeDir string) (configRoot, error) {
 	absPath := path.Join(homeDir, configPath)
 
+	// TODO: validate config here
 	return parseConfig(absPath)
 }

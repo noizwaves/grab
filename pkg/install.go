@@ -46,20 +46,10 @@ func fetchBinaryData(binaryName string, sourceUrl string) ([]byte, error) {
 	return data, nil
 }
 
-func Install() error {
-	config, err := loadConfig()
-	if err != nil {
-		return fmt.Errorf("Error loading config: %w", err)
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("Error determining home directory: %w", err)
-	}
-
-	for _, binary := range config.Binaries {
+func Install(context Context) error {
+	for _, binary := range context.Binaries {
 		// if destination file exists
-		destPath := path.Join(homeDir, localBinPath, binary.Name)
+		destPath := path.Join(context.HomeDir, localBinPath, binary.Name)
 		if _, err := os.Stat(destPath); err == nil {
 			fmt.Printf("%s already installed\n", binary.Name)
 			continue
@@ -68,7 +58,7 @@ func Install() error {
 		fmt.Printf("Installing %s...\n", binary.Name)
 
 		// download and extract target URL
-		sourceUrl, err := renderSourceUrl(binary)
+		sourceUrl, err := binary.GetUrl(context.Platform, context.Architecture)
 		if err != nil {
 			return fmt.Errorf("Error getting source url for %s: %w", binary.Name, err)
 		}

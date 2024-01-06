@@ -22,12 +22,12 @@ func TestParseConfigValid(t *testing.T) {
 				Version: "0.16.5",
 				Platforms: map[configPlatformKey]configPlatformValue{
 					"linux": {
-						"amd64": []string{"unknown-linux-musl", "x86_64", "tgz"},
-						"arm64": []string{"unknown-linux-gnu", "aarch64", "tar.gz"},
+						"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},
+						"arm64": [3]string{"unknown-linux-gnu", "aarch64", "tar.gz"},
 					},
 					"darwin": {
-						"amd64": []string{"apple-darwin", "x86_64", "zip"},
-						"arm64": []string{"apple-darwin", "aarch64", "zip"},
+						"amd64": [3]string{"apple-darwin", "x86_64", "zip"},
+						"arm64": [3]string{"apple-darwin", "aarch64", "zip"},
 					},
 				},
 			},
