@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-const localBinPath = ".local/bin"
-
 func downloadArtifact(sourceURL string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, sourceURL, nil)
 	if err != nil {
@@ -83,8 +81,8 @@ func getCurrentVersion(destPath string, binary Binary) (string, error) {
 
 func Install(context Context) error {
 	for _, binary := range context.Binaries {
+		destPath := path.Join(context.BinPath, binary.Name)
 		// if destination file exists
-		destPath := path.Join(context.HomeDir, localBinPath, binary.Name)
 		if _, err := os.Stat(destPath); err == nil {
 			currentVersion, err := getCurrentVersion(destPath, binary)
 			if err != nil {

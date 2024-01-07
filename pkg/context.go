@@ -3,12 +3,19 @@ package pkg
 import (
 	"fmt"
 	"os"
+	"path"
 	"runtime"
+)
+
+const (
+	localBinPath = ".local/bin"
+	configPath   = ".dotlocalbin.yml"
 )
 
 type Context struct {
 	Binaries     []Binary
-	HomeDir      string
+	BinPath      string
+	ConfigPath   string
 	Platform     string
 	Architecture string
 }
@@ -36,7 +43,8 @@ func NewContext() (Context, error) {
 
 	return Context{
 		Binaries:     binaries,
-		HomeDir:      homeDir,
+		BinPath:      path.Join(homeDir, localBinPath),
+		ConfigPath:   path.Join(homeDir, configPath),
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
 	}, err

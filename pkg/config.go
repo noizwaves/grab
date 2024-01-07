@@ -8,8 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const configPath = ".dotlocalbin.yml"
-
 type configRoot struct {
 	Binaries []configBinary `yaml:"binaries"`
 }
