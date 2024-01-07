@@ -89,12 +89,16 @@ func Install(context Context) error {
 				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
 			}
 
-			fmt.Printf("%s already installed (version %s)\n", binary.Name, currentVersion)
+			if binary.ShouldReplace(currentVersion) {
+				fmt.Printf("%s: installing %s over %s...", binary.Name, currentVersion, binary.Version)
+			} else {
+				fmt.Printf("%s: %s already installed\n", binary.Name, currentVersion)
 
-			continue
+				continue
+			}
+		} else {
+			fmt.Printf("%s: installing %s...", binary.Name, binary.Version)
 		}
-
-		fmt.Printf("Installing %s...\n", binary.Name)
 
 		// download and extract target URL
 		sourceURL, err := binary.GetURL(context.Platform, context.Architecture)
@@ -114,7 +118,7 @@ func Install(context Context) error {
 			return fmt.Errorf("error writing binary to disk: %w", err)
 		}
 
-		fmt.Printf("%s has been installed\n", binary.Name)
+		fmt.Println(" Done!")
 	}
 
 	return nil

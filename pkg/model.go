@@ -67,6 +67,10 @@ func (b *Binary) GetURL(platform, arch string) (string, error) {
 	return output.String(), nil
 }
 
+func (b *Binary) ShouldReplace(currentVersion string) bool {
+	return b.Version != currentVersion
+}
+
 func (b *Binary) getOveride(platform, arch string) (Override, bool) {
 	key := fmt.Sprintf("%s,%s", platform, arch)
 
