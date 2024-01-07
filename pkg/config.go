@@ -15,10 +15,12 @@ type configRoot struct {
 }
 
 type configBinary struct {
-	Name      string                                    `yaml:"name"`
-	Source    string                                    `yaml:"source"`
-	Platforms map[configPlatformKey]configPlatformValue `yaml:"platforms,omitempty"`
-	Version   string                                    `yaml:"version"`
+	Name         string                                    `yaml:"name"`
+	Source       string                                    `yaml:"source"`
+	Platforms    map[configPlatformKey]configPlatformValue `yaml:"platforms,omitempty"`
+	Version      string                                    `yaml:"version"`
+	VersionFlags []string                                  `yaml:"versionFlags"`
+	VersionRegex string                                    `yaml:"versionRegex"`
 }
 
 type (

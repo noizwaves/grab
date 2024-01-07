@@ -12,14 +12,18 @@ func TestParseConfigValid(t *testing.T) {
 	expected := configRoot{
 		Binaries: []configBinary{
 			{
-				Name:    "foo",
-				Source:  "https://foo.com/{{ .Version }}/bin",
-				Version: "1.2.0",
+				Name:         "foo",
+				Source:       "https://foo.com/{{ .Version }}/bin",
+				Version:      "1.2.0",
+				VersionFlags: []string{"--version"},
+				VersionRegex: "\\d+\\.\\d+\\.\\d+",
 			},
 			{
-				Name:    "bar",
-				Source:  "https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}",
-				Version: "0.16.5",
+				Name:         "bar",
+				Source:       "https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}", //nolint:lll
+				Version:      "0.16.5",
+				VersionFlags: []string{"version"},
+				VersionRegex: "\\d+\\.\\d+\\.\\d+",
 				Platforms: map[configPlatformKey]configPlatformValue{
 					"linux": {
 						"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},

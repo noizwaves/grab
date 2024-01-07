@@ -2,9 +2,13 @@ binaries:
   - name: foo
     version: "1.2.0"
     source: https://foo.com/{{ .Version }}/bin
+    versionFlags: [--version]
+    versionRegex: \d+\.\d+\.\d+
   - name: bar
     version: "0.16.5"
     source: https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}
+    versionFlags: [version]
+    versionRegex: \d+\.\d+\.\d+
     platforms:
       linux:
         amd64: [unknown-linux-musl, x86_64, tgz]

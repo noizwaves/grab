@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 )
@@ -63,12 +64,34 @@ func fetchBinaryData(binaryName string, sourceURL string) ([]byte, error) {
 	return data, nil
 }
 
+func getCurrentVersion(destPath string, binary Binary) (string, error) {
+	//nolint:gosec
+	cmd := exec.Command(destPath, binary.VersionFlags...)
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("error executing binary to find version: %w", err)
+	}
+
+	matches := binary.VersionRegex.FindStringSubmatch(string(out))
+	if len(matches) == 0 {
+		return "", fmt.Errorf("version regex did not match command output")
+	}
+
+	return matches[0], nil
+}
+
 func Install(context Context) error {
 	for _, binary := range context.Binaries {
 		// if destination file exists
 		destPath := path.Join(context.HomeDir, localBinPath, binary.Name)
 		if _, err := os.Stat(destPath); err == nil {
-			fmt.Printf("%s already installed\n", binary.Name)
+			currentVersion, err := getCurrentVersion(destPath, binary)
+			if err != nil {
+				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
+			}
+
+			fmt.Printf("%s already installed (version %s)\n", binary.Name, currentVersion)
 
 			continue
 		}

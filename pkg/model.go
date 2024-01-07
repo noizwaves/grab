@@ -3,6 +3,7 @@ package pkg
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"text/template"
 )
 
@@ -13,10 +14,12 @@ type Override struct {
 }
 
 type Binary struct {
-	Name        string
-	Version     string
-	TemplateURL string
-	Overrides   map[string]Override
+	Name         string
+	Version      string
+	TemplateURL  string
+	Overrides    map[string]Override
+	VersionFlags []string
+	VersionRegex *regexp.Regexp
 }
 
 func NewBinary(config configBinary) (Binary, error) {
@@ -32,11 +35,18 @@ func NewBinary(config configBinary) (Binary, error) {
 		}
 	}
 
+	versionRegex, err := regexp.Compile(config.VersionRegex)
+	if err != nil {
+		return Binary{}, fmt.Errorf("version regex does not compile: %w", err)
+	}
+
 	return Binary{
-		Name:        config.Name,
-		Version:     config.Version,
-		TemplateURL: config.Source,
-		Overrides:   overrides,
+		Name:         config.Name,
+		Version:      config.Version,
+		TemplateURL:  config.Source,
+		Overrides:    overrides,
+		VersionFlags: config.VersionFlags,
+		VersionRegex: versionRegex,
 	}, nil
 }
 
