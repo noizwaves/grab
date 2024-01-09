@@ -12,27 +12,37 @@ func TestParseConfigValid(t *testing.T) {
 	expected := configRoot{
 		Binaries: []configBinary{
 			{
-				Name:         "foo",
-				Source:       "https://foo.com/{{ .Version }}/bin",
-				Version:      "1.2.0",
-				VersionFlags: []string{"--version"},
-				VersionRegex: "\\d+\\.\\d+\\.\\d+",
+				Name:    "bar",
+				Version: "1.2.0",
+				Source: configSource{
+					Org:          "foo",
+					Repo:         "bar",
+					ReleaseName:  "{{ .Version }}",
+					FileName:     "bin",
+					VersionFlags: []string{"--version"},
+					VersionRegex: "\\d+\\.\\d+\\.\\d+",
+				},
 			},
 			{
-				Name:         "bar",
-				Source:       "https://bar.com/releases/v{{ .Version }}/assets/v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}", //nolint:lll
-				Version:      "0.16.5",
-				VersionFlags: []string{"version"},
-				VersionRegex: "\\d+\\.\\d+\\.\\d+",
-				Platforms: map[configPlatformKey]configPlatformValue{
-					"linux": {
-						"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},
-						"arm64": [3]string{"unknown-linux-gnu", "aarch64", "tar.gz"},
+				Name:    "baz",
+				Version: "0.16.5",
+				Source: configSource{
+					Org:         "foo",
+					Repo:        "baz",
+					ReleaseName: "v{{ .Version }}",
+					FileName:    "v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}",
+					Overrides: map[configPlatformKey]configPlatformValue{
+						"linux": {
+							"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},
+							"arm64": [3]string{"unknown-linux-gnu", "aarch64", "tar.gz"},
+						},
+						"darwin": {
+							"amd64": [3]string{"apple-darwin", "x86_64", "zip"},
+							"arm64": [3]string{"apple-darwin", "aarch64", "zip"},
+						},
 					},
-					"darwin": {
-						"amd64": [3]string{"apple-darwin", "x86_64", "zip"},
-						"arm64": [3]string{"apple-darwin", "aarch64", "zip"},
-					},
+					VersionFlags: []string{"version"},
+					VersionRegex: "\\d+\\.\\d+\\.\\d+",
 				},
 			},
 		},

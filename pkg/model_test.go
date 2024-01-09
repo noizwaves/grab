@@ -6,33 +6,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBinaryGetURL(t *testing.T) {
+func TestBinaryGetURL(t *testing.T) { //nolint:funlen
 	base := Binary{
 		Name:        "foo",
 		Version:     "1.2.3",
-		TemplateURL: "https://foo/{{ .Version }}/foo",
+		Org:         "bar",
+		Repo:        "foo",
+		ReleaseName: "{{ .Version }}",
+		FileName:    "foo",
 	}
 
 	t.Run("Simple", func(t *testing.T) {
 		result, err := base.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://foo/1.2.3/foo", result)
+		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo", result)
 	})
 
 	t.Run("AllVariables", func(t *testing.T) {
 		binary := base
-		binary.TemplateURL = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
+		binary.FileName = "foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 
 		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://foo/1.2.3/foo-linux-arm64", result)
+		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-linux-arm64", result)
 	})
 
 	t.Run("WithOverrides", func(t *testing.T) {
 		binary := base
-		binary.TemplateURL = "https://foo/{{ .Version }}/foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
+		binary.FileName = "foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
 		binary.Overrides = map[string]Override{
 			"linux,arm64": {
 				Platform:     "QuantumOS",
@@ -44,12 +47,21 @@ func TestBinaryGetURL(t *testing.T) {
 		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://foo/1.2.3/foo-QuantumOS-200qbit.zip", result)
+		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-QuantumOS-200qbit.zip", result)
 	})
 
-	t.Run("InvalidTemplate", func(t *testing.T) {
+	t.Run("InvalidReleaseNameTemplate", func(t *testing.T) {
 		binary := base
-		binary.TemplateURL = "https://foo/{{ .Version"
+		binary.ReleaseName = "v{{ .Version"
+
+		_, err := binary.GetURL("linux", "arm64")
+
+		assert.ErrorContains(t, err, "error parsing source template")
+	})
+
+	t.Run("InvalidFileNameTemplate", func(t *testing.T) {
+		binary := base
+		binary.FileName = "foo-{{ .Version"
 
 		_, err := binary.GetURL("linux", "arm64")
 
@@ -58,7 +70,7 @@ func TestBinaryGetURL(t *testing.T) {
 
 	t.Run("InvalidVariable", func(t *testing.T) {
 		binary := base
-		binary.TemplateURL = "https://foo/{{ .DoesNotExist }}"
+		binary.ReleaseName = "v-{{ .DoesNotExist }}"
 
 		_, err := binary.GetURL("linux", "arm64")
 
@@ -70,7 +82,10 @@ func TestBinaryShouldReplace(t *testing.T) {
 	base := Binary{
 		Name:        "foo",
 		Version:     "1.2.3",
-		TemplateURL: "https://foo/{{ .Version }}/foo",
+		Org:         "bar",
+		Repo:        "foo",
+		ReleaseName: "{{ .Version }}",
+		FileName:    "foo",
 	}
 
 	t.Run("CurrentLessThanDesired", func(t *testing.T) {

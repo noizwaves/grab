@@ -14,9 +14,14 @@ type Override struct {
 }
 
 type Binary struct {
-	Name         string
-	Version      string
-	TemplateURL  string
+	Name    string
+	Version string
+
+	// source
+	Org          string
+	Repo         string
+	ReleaseName  string
+	FileName     string
 	Overrides    map[string]Override
 	VersionFlags []string
 	VersionRegex *regexp.Regexp
@@ -24,7 +29,7 @@ type Binary struct {
 
 func NewBinary(config configBinary) (Binary, error) {
 	overrides := make(map[string]Override)
-	for platform, pOver := range config.Platforms {
+	for platform, pOver := range config.Source.Overrides {
 		for arch, over := range pOver {
 			key := fmt.Sprintf("%s,%s", platform, arch)
 			overrides[key] = Override{
@@ -35,23 +40,29 @@ func NewBinary(config configBinary) (Binary, error) {
 		}
 	}
 
-	versionRegex, err := regexp.Compile(config.VersionRegex)
+	versionRegex, err := regexp.Compile(config.Source.VersionRegex)
 	if err != nil {
 		return Binary{}, fmt.Errorf("version regex does not compile: %w", err)
 	}
 
 	return Binary{
-		Name:         config.Name,
-		Version:      config.Version,
-		TemplateURL:  config.Source,
+		Name:    config.Name,
+		Version: config.Version,
+		// source
+		Org:          config.Source.Org,
+		Repo:         config.Source.Repo,
+		ReleaseName:  config.Source.ReleaseName,
+		FileName:     config.Source.FileName,
 		Overrides:    overrides,
-		VersionFlags: config.VersionFlags,
+		VersionFlags: config.Source.VersionFlags,
 		VersionRegex: versionRegex,
 	}, nil
 }
 
 func (b *Binary) GetURL(platform, arch string) (string, error) {
-	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(b.TemplateURL)
+	templateURL := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
+		b.Org, b.Repo, b.ReleaseName, b.FileName)
+	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(templateURL)
 	if err != nil {
 		return "", fmt.Errorf("error parsing source template: %w", err)
 	}
