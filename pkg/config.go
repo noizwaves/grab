@@ -22,6 +22,7 @@ type configSource struct {
 	Org          string                                    `yaml:"org"`
 	Repo         string                                    `yaml:"repo"`
 	ReleaseName  string                                    `yaml:"releaseName"`
+	ReleaseRegex string                                    `yaml:"releaseRegex"`
 	FileName     string                                    `yaml:"fileName"`
 	Overrides    map[configPlatformKey]configPlatformValue `yaml:"overrides,omitempty"`
 	VersionFlags []string                                  `yaml:"versionFlags"`

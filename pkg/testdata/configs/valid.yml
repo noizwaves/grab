@@ -5,6 +5,7 @@ binaries:
       org: foo
       repo: bar
       releaseName: "{{ .Version }}"
+      releaseRegex: ".*"
       fileName: bin
       versionFlags: [--version]
       versionRegex: \d+\.\d+\.\d+
@@ -14,6 +15,7 @@ binaries:
       org: foo
       repo: baz
       releaseName: "v{{ .Version }}"
+      releaseRegex: "v.*"
       fileName: "v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}"
       overrides:
         linux:
