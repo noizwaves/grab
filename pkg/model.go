@@ -21,6 +21,7 @@ type Binary struct {
 	Org          string
 	Repo         string
 	ReleaseName  string
+	ReleaseRegex *regexp.Regexp
 	FileName     string
 	Overrides    map[string]Override
 	VersionFlags []string
@@ -45,6 +46,11 @@ func NewBinary(config configBinary) (Binary, error) {
 		return Binary{}, fmt.Errorf("version regex does not compile: %w", err)
 	}
 
+	releaseRegex, err := regexp.Compile(config.Source.ReleaseRegex)
+	if err != nil {
+		return Binary{}, fmt.Errorf("release regex does not compile: %w", err)
+	}
+
 	return Binary{
 		Name:    config.Name,
 		Version: config.Version,
@@ -52,6 +58,7 @@ func NewBinary(config configBinary) (Binary, error) {
 		Org:          config.Source.Org,
 		Repo:         config.Source.Repo,
 		ReleaseName:  config.Source.ReleaseName,
+		ReleaseRegex: releaseRegex,
 		FileName:     config.Source.FileName,
 		Overrides:    overrides,
 		VersionFlags: config.Source.VersionFlags,

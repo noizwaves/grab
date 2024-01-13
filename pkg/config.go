@@ -3,7 +3,6 @@ package pkg
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,6 +21,7 @@ type configSource struct {
 	Org          string                                    `yaml:"org"`
 	Repo         string                                    `yaml:"repo"`
 	ReleaseName  string                                    `yaml:"releaseName"`
+	ReleaseRegex string                                    `yaml:"releaseRegex"`
 	FileName     string                                    `yaml:"fileName"`
 	Overrides    map[configPlatformKey]configPlatformValue `yaml:"overrides,omitempty"`
 	VersionFlags []string                                  `yaml:"versionFlags"`
@@ -37,7 +37,7 @@ type configPlatformValue = map[configArchKey]configPlatformArchOverride
 
 type configPlatformArchOverride = [3]string // [platformOveride, archOverride, extOverride]
 
-func parseConfig(path string) (configRoot, error) {
+func loadConfig(path string) (configRoot, error) {
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		return configRoot{}, fmt.Errorf("error reading config file: %w", err)
@@ -52,8 +52,22 @@ func parseConfig(path string) (configRoot, error) {
 	return output, nil
 }
 
-func loadConfig(homeDir string) (configRoot, error) {
-	absPath := path.Join(homeDir, configPath)
+func saveConfig(config *configRoot, path string) error {
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("error serializing config: %w", err)
+	}
 
-	return parseConfig(absPath)
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("error opening existing config file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return fmt.Errorf("error writing to config file: %w", err)
+	}
+
+	return nil
 }

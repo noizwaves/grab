@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseConfigValid(t *testing.T) {
-	actual, err := parseConfig("testdata/configs/valid.yml")
+	actual, err := loadConfig("testdata/configs/valid.yml")
 
 	expected := configRoot{
 		Binaries: []configBinary{
@@ -18,6 +18,7 @@ func TestParseConfigValid(t *testing.T) {
 					Org:          "foo",
 					Repo:         "bar",
 					ReleaseName:  "{{ .Version }}",
+					ReleaseRegex: ".*",
 					FileName:     "bin",
 					VersionFlags: []string{"--version"},
 					VersionRegex: "\\d+\\.\\d+\\.\\d+",
@@ -27,10 +28,11 @@ func TestParseConfigValid(t *testing.T) {
 				Name:    "baz",
 				Version: "0.16.5",
 				Source: configSource{
-					Org:         "foo",
-					Repo:        "baz",
-					ReleaseName: "v{{ .Version }}",
-					FileName:    "v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}",
+					Org:          "foo",
+					Repo:         "baz",
+					ReleaseName:  "v{{ .Version }}",
+					ReleaseRegex: "v.*",
+					FileName:     "v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}",
 					Overrides: map[configPlatformKey]configPlatformValue{
 						"linux": {
 							"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},

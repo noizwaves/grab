@@ -16,6 +16,7 @@ type Context struct {
 	Binaries     []Binary
 	BinPath      string
 	ConfigPath   string
+	Config       *configRoot
 	Platform     string
 	Architecture string
 }
@@ -26,7 +27,8 @@ func NewContext() (Context, error) {
 		return Context{}, fmt.Errorf("error determining home directory: %w", err)
 	}
 
-	config, err := loadConfig(homeDir)
+	configPath := path.Join(homeDir, configPath)
+	config, err := loadConfig(configPath)
 	if err != nil {
 		return Context{}, fmt.Errorf("error loading config: %w", err)
 	}
@@ -44,7 +46,8 @@ func NewContext() (Context, error) {
 	return Context{
 		Binaries:     binaries,
 		BinPath:      path.Join(homeDir, localBinPath),
-		ConfigPath:   path.Join(homeDir, configPath),
+		ConfigPath:   configPath,
+		Config:       &config,
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
 	}, err
