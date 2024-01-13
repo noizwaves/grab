@@ -90,7 +90,7 @@ func Install(context Context) error {
 			}
 
 			if binary.ShouldReplace(currentVersion) {
-				fmt.Printf("%s: installing %s over %s...", binary.Name, currentVersion, binary.Version)
+				fmt.Printf("%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
 			} else {
 				fmt.Printf("%s: %s already installed\n", binary.Name, currentVersion)
 

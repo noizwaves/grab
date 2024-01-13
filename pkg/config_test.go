@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseConfigValid(t *testing.T) {
-	actual, err := parseConfig("testdata/configs/valid.yml")
+	actual, err := loadConfig("testdata/configs/valid.yml")
 
 	expected := configRoot{
 		Binaries: []configBinary{
