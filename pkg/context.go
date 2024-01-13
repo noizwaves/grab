@@ -9,7 +9,7 @@ import (
 
 const (
 	localBinPath = ".local/bin"
-	configPath   = ".dotlocalbin.yml"
+	configPath   = ".garb.yml"
 )
 
 type Context struct {

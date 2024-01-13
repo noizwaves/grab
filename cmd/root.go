@@ -8,7 +8,7 @@ import (
 
 func makeRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "dotlocalbin",
+		Use:   "garb",
 		Short: "User centric dotfile dependency manager",
 	}
 

@@ -1,4 +1,4 @@
-module github.com/noizwaves/dotlocalbin
+module github.com/noizwaves/garb
 
 go 1.21.5
 

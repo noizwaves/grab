@@ -1,10 +1,10 @@
-# dotlocalbin
+# garb
 
-Userspace centric dotfile dependency manager, aiming for compatibility across macOS/Linux/containerized platforms.
+A fast sudo-less package manager for your terminal programs. Supports macOS, Linux, and containers.
 
 ## Usage
 
-1. Create a config file at `~/.dotlocalbin.yml` like:
+1. Create a config file at `~/.garb.yml` like:
 ```yaml
 binaries:
   - name: fzf
@@ -13,13 +13,13 @@ binaries:
 ...
 ```
 
-2. Run `go build -o ~/.local/bin/dotlocalbin main.go`
-3. Run `dotlocalbin install` to install the binaries
+2. Run `go build -o ~/.local/bin/garb main.go`
+3. Run `garb install` to install the binaries
 
 ### Upgrading binary versions
 
-1. Run `dotlocalbin upgrade` to update the config file
-1. Run `dotlocalbin install` to install the updated binaries
+1. Run `garb upgrade` to update the config file
+1. Run `garb install` to install the updated binaries
 
 > [!IMPORTANT]
 > `upgrade` uses the GitHub API which has a low rate limit of 60 requests/hour. To avoid the rate limit, [generate a token with public read-only permission](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) and set the value via the `GH_TOKEN` environment variable.

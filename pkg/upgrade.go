@@ -3,7 +3,7 @@ package pkg
 import (
 	"fmt"
 
-	"github.com/noizwaves/dotlocalbin/pkg/github"
+	"github.com/noizwaves/garb/pkg/github"
 )
 
 func extractReleaseVersion(binary Binary, release github.Release) (string, error) {
@@ -58,7 +58,7 @@ func Upgrade(context Context) error {
 			return fmt.Errorf("error updating config file: %w", err)
 		}
 
-		fmt.Println("\nUpdated config file. Now run `dotlocalbin install`.")
+		fmt.Println("\nUpdated config file. Now run `garb install`.")
 	}
 
 	return nil
