@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func makeUpgradeCommand() *cobra.Command {
-	upgradeCmd := &cobra.Command{
-		Use:   "upgrade",
-		Short: "Upgrade configured version to latest upstream",
+func makeUpdateCommand() *cobra.Command {
+	updateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "Updates packages to use latest remote version",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)
@@ -21,7 +21,7 @@ func makeUpgradeCommand() *cobra.Command {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			err = pkg.Upgrade(context)
+			err = pkg.Update(context)
 			if err != nil {
 				return fmt.Errorf("error upgrading: %w", err)
 			}
@@ -30,5 +30,5 @@ func makeUpgradeCommand() *cobra.Command {
 		},
 	}
 
-	return upgradeCmd
+	return updateCmd
 }

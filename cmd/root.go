@@ -51,7 +51,7 @@ func makeRootCommand() *cobra.Command {
 	// viper.BindEnv("log-level")
 
 	rootCmd.AddCommand(makeInstallCommand())
-	rootCmd.AddCommand(makeUpgradeCommand())
+	rootCmd.AddCommand(makeUpdateCommand())
 
 	return rootCmd
 }

@@ -20,7 +20,7 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 	config.Packages[binaryName] = version
 }
 
-func Upgrade(context Context) error {
+func Update(context Context) error {
 	slog.Info("Updating configured packages")
 
 	dirty := false
