@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -33,6 +34,7 @@ func downloadArtifact(sourceURL string) ([]byte, error) {
 }
 
 func fetchBinaryData(binaryName string, sourceURL string) ([]byte, error) {
+	slog.Info("Downloading artifact", "url", sourceURL)
 	data, err := downloadArtifact(sourceURL)
 	if err != nil {
 		return nil, fmt.Errorf("error downloading remote file: %w", err)
@@ -80,6 +82,8 @@ func getCurrentVersion(destPath string, binary Binary) (string, error) {
 }
 
 func Install(context Context) error {
+	slog.Info("Installing configured packages")
+
 	for _, binary := range context.Binaries {
 		destPath := path.Join(context.BinPath, binary.Name)
 		// if destination file exists

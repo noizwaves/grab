@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"runtime"
@@ -23,9 +24,23 @@ type Context struct {
 	Architecture string
 }
 
+func getPackageNames(repository *repository) []string {
+	names := make([]string, len(repository.Packages))
+	for idx, pkg := range repository.Packages {
+		names[idx] = pkg.Metadata.Name
+	}
+
+	return names
+}
+
 func locatePackage(repository *repository, name string) (*configPackage, error) {
+	slog.Debug("Looking for configured package in repository", "name", name)
 	idx := slices.IndexFunc(repository.Packages, func(p configPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
+		slog.Error("Package missing from repository", "name", name)
+
+		slog.Debug("Repository contains", "packageNames", getPackageNames(repository))
+
 		return nil, fmt.Errorf("package %q missing from repository", name)
 	}
 
@@ -33,10 +48,13 @@ func locatePackage(repository *repository, name string) (*configPackage, error) 
 }
 
 func NewContext() (Context, error) {
+	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return Context{}, fmt.Errorf("error determining home directory: %w", err)
 	}
+	slog.Debug("Configuration information", "homeDir", homeDir)
 
 	configPath := path.Join(homeDir, configPath)
 	config, err := loadConfig(configPath)

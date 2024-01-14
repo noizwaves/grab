@@ -3,6 +3,7 @@ package pkg
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"text/template"
 )
@@ -83,7 +84,11 @@ func (b *Binary) GetURL(platform, arch string) (string, error) {
 }
 
 func (b *Binary) ShouldReplace(currentVersion string) bool {
-	return b.Version != currentVersion
+	result := b.Version != currentVersion
+	slog.Info("Checking if installed binary should be replaced", "name", b.Name, "replace", result)
+	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.Version)
+
+	return result
 }
 
 type urlViewModel struct {

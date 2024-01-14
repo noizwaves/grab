@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/noizwaves/garb/pkg/github"
 )
@@ -20,6 +21,8 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 }
 
 func Upgrade(context Context) error {
+	slog.Info("Updating configured packages")
+
 	dirty := false
 	for _, binary := range context.Binaries {
 		latestRelease, err := github.GetLatestRelease(binary.Org, binary.Repo)
@@ -48,6 +51,8 @@ func Upgrade(context Context) error {
 		}
 
 		fmt.Println("\nUpdated config file. Now run `garb install`.")
+	} else {
+		slog.Debug("No config changes required, no versions were changed")
 	}
 
 	return nil
