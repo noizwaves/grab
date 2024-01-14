@@ -13,7 +13,7 @@ func makeRootCommand() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(makeInstallCommand())
-	rootCmd.AddCommand(makeUpgradeCommand())
+	rootCmd.AddCommand(makeUpdateCommand())
 
 	return rootCmd
 }

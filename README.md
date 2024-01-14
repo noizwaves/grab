@@ -41,13 +41,13 @@ packages:
 /home/adam/.local/bin/fzf
 ```
 
-### Upgrading package versions
+### Updating versions
 
-1. Run `garb upgrade` to update the config file
-1. Run `garb install` to install the updated programs
+1. Run `garb update` to update the config file with the latest upstream versions.
+1. Run `garb install` to install the updated versions.
 
 > [!IMPORTANT]
-> `upgrade` uses the GitHub API which has a low rate limit of 60 requests/hour. To avoid the rate limit, [generate a token with public read-only permission](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) and set the value via the `GH_TOKEN` environment variable.
+> `update` uses the GitHub API which has a low rate limit of 60 requests/hour for anonymous users. To avoid the rate limit, [generate a token with public read-only permission](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) and set the value via the `GH_TOKEN` environment variable.
 
 ## Development
 

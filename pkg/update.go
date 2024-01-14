@@ -19,7 +19,7 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 	config.Packages[binaryName] = version
 }
 
-func Upgrade(context Context) error {
+func Update(context Context) error {
 	dirty := false
 	for _, binary := range context.Binaries {
 		latestRelease, err := github.GetLatestRelease(binary.Org, binary.Repo)
