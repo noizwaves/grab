@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,10 +48,13 @@ type configProgram struct {
 }
 
 func loadConfig(path string) (configRoot, error) {
+	slog.Info("Loading config file from disk", "path", path)
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		return configRoot{}, fmt.Errorf("error reading config file: %w", err)
 	}
+
+	slog.Debug("Loaded config from disk", "content", string(yamlFile))
 
 	output := configRoot{}
 	err = yaml.Unmarshal(yamlFile, &output)

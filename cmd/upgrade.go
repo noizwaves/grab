@@ -11,6 +11,10 @@ func makeUpgradeCommand() *cobra.Command {
 	upgradeCmd := &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade configured version to latest upstream",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := configureLogging()
+			cobra.CheckErr(err)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			context, err := pkg.NewContext()
 			if err != nil {
