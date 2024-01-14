@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -61,10 +62,14 @@ func loadConfig(path string) (configRoot, error) {
 }
 
 func saveConfig(config *configRoot, path string) error {
-	data, err := yaml.Marshal(config)
+	var buf bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&buf)
+	yamlEncoder.SetIndent(2) //nolint:gomnd
+	err := yamlEncoder.Encode(config)
 	if err != nil {
 		return fmt.Errorf("error serializing config: %w", err)
 	}
+	data := buf.Bytes()
 
 	file, err := os.Create(path)
 	if err != nil {
