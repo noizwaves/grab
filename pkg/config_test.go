@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadRepositoryValid(t *testing.T) {
-	actual, err := loadRepository("testdata/configs/valid")
+	actual, err := loadRepository("testdata/configs/valid/.garb/repository")
 
 	expected := repository{
 		Packages: []configPackage{
@@ -45,10 +45,10 @@ func TestLoadRepositoryValid(t *testing.T) {
 						Name:         "v{{ .Version }}",
 						VersionRegex: "\\d+\\.\\d+\\.\\d+",
 						FileName: map[string]string{
-							"darwin,amd64": "v{{ .Version }}-apple-darwin-x86_64.zip",
-							"darwin,arm64": "v{{ .Version }}-apple-darwin-aarch64.zip",
-							"linux,amd64":  "v{{ .Version }}-unknown-linux-musl-x86_64.tgz",
-							"linux,arm64":  "v{{ .Version }}-unknown-linux-gnu-aarch64.tar.gz",
+							"darwin,amd64": "v{{ .Version }}-x86_64-apple-darwin.zip",
+							"darwin,arm64": "v{{ .Version }}-aarch64-apple-darwin.zip",
+							"linux,amd64":  "v{{ .Version }}-x86_64-unknown-linux-musl.tgz",
+							"linux,arm64":  "v{{ .Version }}-aarch64-unknown-linux-gnu.tar.gz",
 						},
 					},
 					Program: configProgram{
@@ -65,7 +65,7 @@ func TestLoadRepositoryValid(t *testing.T) {
 }
 
 func TestLoadConfigValid(t *testing.T) {
-	actual, err := loadConfig("testdata/configs/valid")
+	actual, err := loadConfig("testdata/configs/valid/.garb/config.yml")
 
 	expected := configRoot{
 		Packages: map[string]string{
