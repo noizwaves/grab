@@ -34,7 +34,7 @@ func TestBinaryGetURL(t *testing.T) {
 		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-linux-arm64", result)
+		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-1.2.3", result)
 	})
 
 	t.Run("InvalidReleaseNameTemplate", func(t *testing.T) {

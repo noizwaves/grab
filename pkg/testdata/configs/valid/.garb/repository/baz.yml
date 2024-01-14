@@ -3,7 +3,7 @@ kind: Package
 metadata:
   name: baz
 spec:
-  gitHubRelease::
+  gitHubRelease:
     org: foo
     repo: baz
     name: "v{{ .Version }}"

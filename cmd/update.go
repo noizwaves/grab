@@ -11,6 +11,10 @@ func makeUpdateCommand() *cobra.Command {
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "Updates packages to use latest remote version",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := configureLogging()
+			cobra.CheckErr(err)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			context, err := pkg.NewContext()
 			if err != nil {

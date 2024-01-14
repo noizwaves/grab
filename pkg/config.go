@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,13 +48,16 @@ type configProgram struct {
 }
 
 func loadConfig(path string) (configRoot, error) {
-	yamlFile, err := os.ReadFile(path)
+	slog.Info("Loading config file from disk", "path", path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return configRoot{}, fmt.Errorf("error reading config file: %w", err)
 	}
 
+	slog.Debug("Loaded config from disk", "content", string(data))
+
 	output := configRoot{}
-	err = yaml.Unmarshal(yamlFile, &output)
+	err = yaml.Unmarshal(data, &output)
 	if err != nil {
 		return configRoot{}, fmt.Errorf("error parsing config YAML: %w", err)
 	}
@@ -62,6 +66,7 @@ func loadConfig(path string) (configRoot, error) {
 }
 
 func saveConfig(config *configRoot, path string) error {
+	slog.Info("Saving config file to disk", "path", path)
 	var buf bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&buf)
 	yamlEncoder.SetIndent(2) //nolint:gomnd
@@ -70,6 +75,8 @@ func saveConfig(config *configRoot, path string) error {
 		return fmt.Errorf("error serializing config: %w", err)
 	}
 	data := buf.Bytes()
+
+	slog.Debug("Writing config to disk", "content", string(data))
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -86,13 +93,16 @@ func saveConfig(config *configRoot, path string) error {
 }
 
 func loadPackage(path string) (configPackage, error) {
-	yamlFile, err := os.ReadFile(path)
+	slog.Info("Loading package config from disk", "path", path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return configPackage{}, fmt.Errorf("error reading package config file: %w", err)
 	}
 
+	slog.Debug("Loaded package config from disk", "content", string(data))
+
 	output := configPackage{}
-	err = yaml.Unmarshal(yamlFile, &output)
+	err = yaml.Unmarshal(data, &output)
 	if err != nil {
 		return configPackage{}, fmt.Errorf("error parsing package config YAML: %w", err)
 	}
@@ -101,6 +111,7 @@ func loadPackage(path string) (configPackage, error) {
 }
 
 func loadRepository(repoPath string) (repository, error) {
+	slog.Info("Loading packages from repository on disk", "repoPath", repoPath)
 	packages := []configPackage{}
 
 	err := filepath.Walk(repoPath, func(path string, info fs.FileInfo, err error) error {
@@ -113,6 +124,8 @@ func loadRepository(repoPath string) (repository, error) {
 		}
 
 		if !strings.HasSuffix(path, ".yml") {
+			slog.Debug("Skipping non .yml file", "path", path)
+
 			return nil
 		}
 
@@ -128,6 +141,8 @@ func loadRepository(repoPath string) (repository, error) {
 	if err != nil {
 		return repository{}, fmt.Errorf("error loading repository: %w", err)
 	}
+
+	slog.Info("Loaded packages from repository", "count", len(packages))
 
 	return repository{
 		Packages: packages,
