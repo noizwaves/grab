@@ -6,14 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBinaryGetURL(t *testing.T) { //nolint:funlen
+func TestBinaryGetURL(t *testing.T) {
 	base := Binary{
 		Name:        "foo",
 		Version:     "1.2.3",
 		Org:         "bar",
 		Repo:        "foo",
 		ReleaseName: "{{ .Version }}",
-		FileName:    "foo",
+		FileName: map[string]string{
+			"linux,arm64": "foo",
+		},
 	}
 
 	t.Run("Simple", func(t *testing.T) {
@@ -25,29 +27,14 @@ func TestBinaryGetURL(t *testing.T) { //nolint:funlen
 
 	t.Run("AllVariables", func(t *testing.T) {
 		binary := base
-		binary.FileName = "foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
-
-		result, err := binary.GetURL("linux", "arm64")
-
-		assert.NoError(t, err)
-		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-linux-arm64", result)
-	})
-
-	t.Run("WithOverrides", func(t *testing.T) {
-		binary := base
-		binary.FileName = "foo-{{ .Platform }}-{{ .Arch }}{{ .Ext }}"
-		binary.Overrides = map[string]Override{
-			"linux,arm64": {
-				Platform:     "QuantumOS",
-				Architecture: "200qbit",
-				Extension:    ".zip",
-			},
+		binary.FileName = map[string]string{
+			"linux,arm64": "foo-{{ .Version }}",
 		}
 
 		result, err := binary.GetURL("linux", "arm64")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-QuantumOS-200qbit.zip", result)
+		assert.Equal(t, "https://github.com/bar/foo/releases/download/1.2.3/foo-linux-arm64", result)
 	})
 
 	t.Run("InvalidReleaseNameTemplate", func(t *testing.T) {
@@ -61,7 +48,9 @@ func TestBinaryGetURL(t *testing.T) { //nolint:funlen
 
 	t.Run("InvalidFileNameTemplate", func(t *testing.T) {
 		binary := base
-		binary.FileName = "foo-{{ .Version"
+		binary.FileName = map[string]string{
+			"linux,arm64": "foo-{{ .Version",
+		}
 
 		_, err := binary.GetURL("linux", "arm64")
 
@@ -85,7 +74,9 @@ func TestBinaryShouldReplace(t *testing.T) {
 		Org:         "bar",
 		Repo:        "foo",
 		ReleaseName: "{{ .Version }}",
-		FileName:    "foo",
+		FileName: map[string]string{
+			"linux,arm64": "foo",
+		},
 	}
 
 	t.Run("CurrentLessThanDesired", func(t *testing.T) {

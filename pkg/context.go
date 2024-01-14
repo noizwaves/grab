@@ -5,11 +5,13 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"slices"
 )
 
 const (
-	localBinPath = ".local/bin"
-	configPath   = ".garb.yml"
+	localBinPath   = ".local/bin"
+	configPath     = ".garb/config.yml"
+	repositoryPath = ".garb/repository"
 )
 
 type Context struct {
@@ -19,6 +21,15 @@ type Context struct {
 	Config       *configRoot
 	Platform     string
 	Architecture string
+}
+
+func locatePackage(repository *repository, name string) (*configPackage, error) {
+	idx := slices.IndexFunc(repository.Packages, func(p configPackage) bool { return p.Metadata.Name == name })
+	if idx == -1 {
+		return nil, fmt.Errorf("package %q missing from repository", name)
+	}
+
+	return &repository.Packages[idx], nil
 }
 
 func NewContext() (Context, error) {
@@ -33,11 +44,22 @@ func NewContext() (Context, error) {
 		return Context{}, fmt.Errorf("error loading config: %w", err)
 	}
 
+	repoPath := path.Join(homeDir, repositoryPath)
+	repository, err := loadRepository(repoPath)
+	if err != nil {
+		return Context{}, fmt.Errorf("error loading repository: %w", err)
+	}
+
 	binaries := make([]Binary, 0)
-	for _, cb := range config.Binaries {
-		binary, err := NewBinary(cb)
+	for name, version := range config.Packages {
+		located, err := locatePackage(&repository, name)
 		if err != nil {
-			return Context{}, fmt.Errorf("error constructing binary %q: %w", cb.Name, err)
+			return Context{}, fmt.Errorf("error locating package information: %w", err)
+		}
+
+		binary, err := NewBinary(name, version, *located)
+		if err != nil {
+			return Context{}, fmt.Errorf("error constructing binary %q: %w", name, err)
 		}
 
 		binaries = append(binaries, binary)

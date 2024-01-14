@@ -15,17 +15,8 @@ func extractReleaseVersion(binary Binary, release github.Release) (string, error
 	return matches[0], nil
 }
 
-func setBinaryVersion(config *configRoot, binaryName, version string) error {
-	for i, binary := range config.Binaries {
-		if binary.Name == binaryName {
-			binary.Version = version
-			config.Binaries[i] = binary
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%q missing from config, unable to update version", binaryName)
+func setBinaryVersion(config *configRoot, binaryName, version string) {
+	config.Packages[binaryName] = version
 }
 
 func Upgrade(context Context) error {
@@ -46,9 +37,7 @@ func Upgrade(context Context) error {
 		} else {
 			fmt.Printf("%s: %s -> %s (%s)\n", binary.Name, binary.Version, latestVersion, latestRelease.URL)
 			dirty = true
-			if err = setBinaryVersion(context.Config, binary.Name, latestVersion); err != nil {
-				return err
-			}
+			setBinaryVersion(context.Config, binary.Name, latestVersion)
 		}
 	}
 

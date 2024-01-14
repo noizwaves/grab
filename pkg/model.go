@@ -18,63 +18,60 @@ type Binary struct {
 	Version string
 
 	// source
-	Org          string
-	Repo         string
+	Org  string
+	Repo string
+	// release name template
 	ReleaseName  string
 	ReleaseRegex *regexp.Regexp
-	FileName     string
-	Overrides    map[string]Override
-	VersionFlags []string
+	// (platform,arch) -> filename template
+	FileName map[string]string
+
+	// program related fields
+	VersionArgs  []string
 	VersionRegex *regexp.Regexp
 }
 
-func NewBinary(config configBinary) (Binary, error) {
-	overrides := make(map[string]Override)
-	for platform, pOver := range config.Source.Overrides {
-		for arch, over := range pOver {
-			key := fmt.Sprintf("%s,%s", platform, arch)
-			overrides[key] = Override{
-				Platform:     over[0],
-				Architecture: over[1],
-				Extension:    over[2],
-			}
-		}
-	}
-
-	versionRegex, err := regexp.Compile(config.Source.VersionRegex)
+func NewBinary(name, version string, config configPackage) (Binary, error) {
+	versionRegex, err := regexp.Compile(config.Spec.Program.VersionRegex)
 	if err != nil {
 		return Binary{}, fmt.Errorf("version regex does not compile: %w", err)
 	}
 
-	releaseRegex, err := regexp.Compile(config.Source.ReleaseRegex)
+	releaseRegex, err := regexp.Compile(config.Spec.GitHubRelease.VersionRegex)
 	if err != nil {
 		return Binary{}, fmt.Errorf("release regex does not compile: %w", err)
 	}
 
 	return Binary{
-		Name:    config.Name,
-		Version: config.Version,
-		// source
-		Org:          config.Source.Org,
-		Repo:         config.Source.Repo,
-		ReleaseName:  config.Source.ReleaseName,
+		Name:    name,
+		Version: version,
+		// package
+		Org:          config.Spec.GitHubRelease.Org,
+		Repo:         config.Spec.GitHubRelease.Repo,
+		ReleaseName:  config.Spec.GitHubRelease.Name,
 		ReleaseRegex: releaseRegex,
-		FileName:     config.Source.FileName,
-		Overrides:    overrides,
-		VersionFlags: config.Source.VersionFlags,
+		FileName:     config.Spec.GitHubRelease.FileName,
+		// program
+		VersionArgs:  config.Spec.Program.VersionArgs,
 		VersionRegex: versionRegex,
 	}, nil
 }
 
 func (b *Binary) GetURL(platform, arch string) (string, error) {
+	key := platform + "," + arch
+	fileName, ok := b.FileName[key]
+	if !ok {
+		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
+	}
+
 	templateURL := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
-		b.Org, b.Repo, b.ReleaseName, b.FileName)
+		b.Org, b.Repo, b.ReleaseName, fileName)
 	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(templateURL)
 	if err != nil {
 		return "", fmt.Errorf("error parsing source template: %w", err)
 	}
 
-	vm := newURLViewModel(b, platform, arch)
+	vm := newURLViewModel(b)
 
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, vm)
@@ -89,35 +86,12 @@ func (b *Binary) ShouldReplace(currentVersion string) bool {
 	return b.Version != currentVersion
 }
 
-func (b *Binary) getOveride(platform, arch string) (Override, bool) {
-	key := fmt.Sprintf("%s,%s", platform, arch)
-
-	if over, ok := b.Overrides[key]; ok {
-		return over, true
-	}
-
-	return Override{}, false
-}
-
 type urlViewModel struct {
-	Version  string
-	Platform string
-	Arch     string
-	Ext      string
+	Version string
 }
 
-func newURLViewModel(binary *Binary, platform, arch string) urlViewModel {
-	ext := ""
-	if over, ok := binary.getOveride(platform, arch); ok {
-		platform = over.Platform
-		arch = over.Architecture
-		ext = over.Extension
-	}
-
+func newURLViewModel(binary *Binary) urlViewModel {
 	return urlViewModel{
-		Version:  binary.Version,
-		Platform: platform,
-		Arch:     arch,
-		Ext:      ext,
+		Version: binary.Version,
 	}
 }

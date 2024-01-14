@@ -6,47 +6,71 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseConfigValid(t *testing.T) {
-	actual, err := loadConfig("testdata/configs/valid.yml")
+func TestLoadRepositoryValid(t *testing.T) {
+	actual, err := loadRepository("testdata/configs/valid")
 
-	expected := configRoot{
-		Binaries: []configBinary{
+	expected := repository{
+		Packages: []configPackage{
 			{
-				Name:    "bar",
-				Version: "1.2.0",
-				Source: configSource{
-					Org:          "foo",
-					Repo:         "bar",
-					ReleaseName:  "{{ .Version }}",
-					ReleaseRegex: ".*",
-					FileName:     "bin",
-					VersionFlags: []string{"--version"},
-					VersionRegex: "\\d+\\.\\d+\\.\\d+",
+				Metadata: configPackageMetadata{
+					Name: "bar",
 				},
-			},
-			{
-				Name:    "baz",
-				Version: "0.16.5",
-				Source: configSource{
-					Org:          "foo",
-					Repo:         "baz",
-					ReleaseName:  "v{{ .Version }}",
-					ReleaseRegex: "v.*",
-					FileName:     "v{{ .Version }}-{{ .Platform }}-{{ .Arch }}.{{ .Ext }}",
-					Overrides: map[configPlatformKey]configPlatformValue{
-						"linux": {
-							"amd64": [3]string{"unknown-linux-musl", "x86_64", "tgz"},
-							"arm64": [3]string{"unknown-linux-gnu", "aarch64", "tar.gz"},
-						},
-						"darwin": {
-							"amd64": [3]string{"apple-darwin", "x86_64", "zip"},
-							"arm64": [3]string{"apple-darwin", "aarch64", "zip"},
+				Spec: configPackageSpec{
+					GitHubRelease: configGitHubRelease{
+						Org:          "foo",
+						Repo:         "bar",
+						Name:         "{{ .Version }}",
+						VersionRegex: "\\d+\\.\\d+\\.\\d+",
+						FileName: map[string]string{
+							"darwin,amd64": "bin",
+							"darwin,arm64": "bin",
+							"linux,amd64":  "bin",
+							"linux,arm64":  "bin",
 						},
 					},
-					VersionFlags: []string{"version"},
-					VersionRegex: "\\d+\\.\\d+\\.\\d+",
+					Program: configProgram{
+						VersionArgs:  []string{"--version"},
+						VersionRegex: "\\d+\\.\\d+\\.\\d+",
+					},
 				},
 			},
+			{
+				Metadata: configPackageMetadata{
+					Name: "baz",
+				},
+				Spec: configPackageSpec{
+					GitHubRelease: configGitHubRelease{
+						Org:          "foo",
+						Repo:         "baz",
+						Name:         "v{{ .Version }}",
+						VersionRegex: "\\d+\\.\\d+\\.\\d+",
+						FileName: map[string]string{
+							"darwin,amd64": "v{{ .Version }}-apple-darwin-x86_64.zip",
+							"darwin,arm64": "v{{ .Version }}-apple-darwin-aarch64.zip",
+							"linux,amd64":  "v{{ .Version }}-unknown-linux-musl-x86_64.tgz",
+							"linux,arm64":  "v{{ .Version }}-unknown-linux-gnu-aarch64.tar.gz",
+						},
+					},
+					Program: configProgram{
+						VersionArgs:  []string{"version"},
+						VersionRegex: "\\d+\\.\\d+\\.\\d+",
+					},
+				},
+			},
+		},
+	}
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestLoadConfigValid(t *testing.T) {
+	actual, err := loadConfig("testdata/configs/valid")
+
+	expected := configRoot{
+		Packages: map[string]string{
+			"bar": "1.2.0",
+			"baz": "0.16.5",
 		},
 	}
 

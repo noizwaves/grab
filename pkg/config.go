@@ -2,40 +2,48 @@ package pkg
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type configRoot struct {
-	Binaries []configBinary `yaml:"binaries"`
+	Packages map[string]string `yaml:"packages"`
 }
 
-type configBinary struct {
-	Name    string       `yaml:"name"`
-	Version string       `yaml:"version"`
-	Source  configSource `yaml:"source"`
+type repository struct {
+	Packages []configPackage
 }
 
-type configSource struct {
-	Org          string                                    `yaml:"org"`
-	Repo         string                                    `yaml:"repo"`
-	ReleaseName  string                                    `yaml:"releaseName"`
-	ReleaseRegex string                                    `yaml:"releaseRegex"`
-	FileName     string                                    `yaml:"fileName"`
-	Overrides    map[configPlatformKey]configPlatformValue `yaml:"overrides,omitempty"`
-	VersionFlags []string                                  `yaml:"versionFlags"`
-	VersionRegex string                                    `yaml:"versionRegex"`
+type configPackage struct {
+	Metadata configPackageMetadata `yaml:"metadata"`
+	Spec     configPackageSpec     `yaml:"spec"`
 }
 
-type (
-	configArchKey     = string
-	configPlatformKey = string
-)
+type configPackageMetadata struct {
+	Name string `yaml:"name"`
+}
 
-type configPlatformValue = map[configArchKey]configPlatformArchOverride
+type configPackageSpec struct {
+	GitHubRelease configGitHubRelease `yaml:"gitHubRelease"`
+	Program       configProgram       `yaml:"program"`
+}
 
-type configPlatformArchOverride = [3]string // [platformOveride, archOverride, extOverride]
+type configGitHubRelease struct {
+	Org          string            `yaml:"org"`
+	Repo         string            `yaml:"repo"`
+	Name         string            `yaml:"name"`
+	VersionRegex string            `yaml:"versionRegex"`
+	FileName     map[string]string `yaml:"fileName"`
+}
+
+type configProgram struct {
+	VersionArgs  []string `yaml:"versionArgs"`
+	VersionRegex string   `yaml:"versionRegex"`
+}
 
 func loadConfig(path string) (configRoot, error) {
 	yamlFile, err := os.ReadFile(path)
@@ -70,4 +78,53 @@ func saveConfig(config *configRoot, path string) error {
 	}
 
 	return nil
+}
+
+func loadPackage(path string) (configPackage, error) {
+	yamlFile, err := os.ReadFile(path)
+	if err != nil {
+		return configPackage{}, fmt.Errorf("error reading package config file: %w", err)
+	}
+
+	output := configPackage{}
+	err = yaml.Unmarshal(yamlFile, &output)
+	if err != nil {
+		return configPackage{}, fmt.Errorf("error parsing package config YAML: %w", err)
+	}
+
+	return output, nil
+}
+
+func loadRepository(repoPath string) (repository, error) {
+	packages := []configPackage{}
+
+	err := filepath.Walk(repoPath, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("error reading file system: %w", err)
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(path, ".yml") {
+			return nil
+		}
+
+		loaded, err := loadPackage(path)
+		if err != nil {
+			return fmt.Errorf("error loading package config: %w", err)
+		}
+
+		packages = append(packages, loaded)
+
+		return nil
+	})
+	if err != nil {
+		return repository{}, fmt.Errorf("error loading repository: %w", err)
+	}
+
+	return repository{
+		Packages: packages,
+	}, nil
 }

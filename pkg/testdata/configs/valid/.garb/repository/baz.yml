@@ -1,0 +1,18 @@
+apiVersion: garb.noizwaves.com/v1alpha1
+kind: Package
+metadata:
+  name: baz
+spec:
+  gitHubRelease::
+    org: foo
+    repo: baz
+    name: "v{{ .Version }}"
+    versionRegex: \d+\.\d+\.\d+
+    fileName:
+      darwin,amd64: v{{ .Version }}-x86_64-apple-darwin.zip
+      darwin,arm64: v{{ .Version }}-aarch64-apple-darwin.zip
+      linux,amd64: v{{ .Version }}-x86_64-unknown-linux-musl.tgz
+      linux,arm64: v{{ .Version }}-aarch64-unknown-linux-gnu.tar.gz
+  program:
+    versionArgs: [version]
+    versionRegex: \d+\.\d+\.\d+

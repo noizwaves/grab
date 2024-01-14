@@ -64,7 +64,7 @@ func fetchBinaryData(binaryName string, sourceURL string) ([]byte, error) {
 
 func getCurrentVersion(destPath string, binary Binary) (string, error) {
 	//nolint:gosec
-	cmd := exec.Command(destPath, binary.VersionFlags...)
+	cmd := exec.Command(destPath, binary.VersionArgs...)
 
 	out, err := cmd.Output()
 	if err != nil {
