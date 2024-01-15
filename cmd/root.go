@@ -38,7 +38,11 @@ func configureLogging() error {
 func makeRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "grab",
-		Short: "User centric dotfile dependency manager",
+		Short: "A fast, sudo-less package manager for your terminal programs",
+		Long: `
+A fast, sudo-less package manager for your terminal programs. Downloads directly form GitHub.
+Supports macOS, Linux, and containers.
+`,
 	}
 
 	rootCmd.PersistentFlags().String("log-level", "warn", "Logging level (i.e. debug, info, warn, error) (GRAB_LOG_LEVEL)")
