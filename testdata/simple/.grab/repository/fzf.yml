@@ -1,0 +1,18 @@
+apiVersion: grab.noizwaves.com/v1alpha1
+kind: Package
+metadata:
+  name: fzf
+spec:
+  gitHubRelease:
+    org: junegunn
+    repo: fzf
+    name: "{{ .Version }}"
+    versionRegex: \d+\.\d+\.\d+
+    fileName:
+      darwin,amd64: fzf-{{ .Version }}-darwin_amd64.zip
+      darwin,arm64: fzf-{{ .Version }}-darwin_arm64.zip
+      linux,amd64: fzf-{{ .Version }}-linux_amd64.tar.gz
+      linux,arm64: fzf-{{ .Version }}-linux_arm64.tar.gz
+  program:
+    versionArgs: [--version]
+    versionRegex: \d+\.\d+\.\d+
