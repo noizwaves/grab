@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadRepositoryValid(t *testing.T) {
-	actual, err := loadRepository("testdata/configs/valid/.grab/repository")
+	actual, err := loadRepository("testdata/repository/valid")
 
 	expected := repository{
 		Packages: []configPackage{
@@ -65,7 +65,7 @@ func TestLoadRepositoryValid(t *testing.T) {
 }
 
 func TestLoadConfigValid(t *testing.T) {
-	actual, err := loadConfig("testdata/configs/valid/.grab/config.yml")
+	actual, err := loadConfig("testdata/configs/valid.yml")
 
 	expected := configRoot{
 		Packages: map[string]string{
