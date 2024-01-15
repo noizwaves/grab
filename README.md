@@ -24,7 +24,6 @@ spec:
   program:
     versionArgs: [--version]
     versionRegex: \d+\.\d+\.\d+
-...
 ```
 
 2. Add the version to install to `~/.grab/config.yml`:
