@@ -37,15 +37,15 @@ func configureLogging() error {
 
 func makeRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "garb",
+		Use:   "grab",
 		Short: "User centric dotfile dependency manager",
 	}
 
-	rootCmd.PersistentFlags().String("log-level", "warn", "Logging level (i.e. debug, info, warn, error) (GARB_LOG_LEVEL)")
+	rootCmd.PersistentFlags().String("log-level", "warn", "Logging level (i.e. debug, info, warn, error) (GRAB_LOG_LEVEL)")
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")) //nolint:errcheck
 	viper.SetDefault("log-level", "warn")
 
-	viper.SetEnvPrefix("garb")
+	viper.SetEnvPrefix("grab")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 	// viper.BindEnv("log-level")

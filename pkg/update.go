@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/noizwaves/garb/pkg/github"
+	"github.com/noizwaves/grab/pkg/github"
 )
 
 func extractReleaseVersion(binary Binary, release github.Release) (string, error) {
@@ -50,7 +50,7 @@ func Update(context Context) error {
 			return fmt.Errorf("error updating config file: %w", err)
 		}
 
-		fmt.Println("\nUpdated config file. Now run `garb install`.")
+		fmt.Println("\nUpdated config file. Now run `grab install`.")
 	} else {
 		slog.Debug("No config changes required, no versions were changed")
 	}

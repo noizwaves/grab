@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/noizwaves/garb/pkg"
+	"github.com/noizwaves/grab/pkg"
 	"github.com/spf13/cobra"
 )
 

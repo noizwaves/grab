@@ -1,6 +1,6 @@
 package main
 
-import "github.com/noizwaves/garb/cmd"
+import "github.com/noizwaves/grab/cmd"
 
 func main() {
 	cmd.Execute()

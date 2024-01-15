@@ -1,4 +1,4 @@
-module github.com/noizwaves/garb
+module github.com/noizwaves/grab
 
 go 1.21.5
 

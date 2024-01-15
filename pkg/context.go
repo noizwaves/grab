@@ -11,8 +11,8 @@ import (
 
 const (
 	localBinPath   = ".local/bin"
-	configPath     = ".garb/config.yml"
-	repositoryPath = ".garb/repository"
+	configPath     = ".grab/config.yml"
+	repositoryPath = ".grab/repository"
 )
 
 type Context struct {
