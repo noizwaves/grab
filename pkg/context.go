@@ -7,6 +7,8 @@ import (
 	"path"
 	"runtime"
 	"slices"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -47,10 +49,24 @@ func locatePackage(repository *repository, name string) (*configPackage, error) 
 	return &repository.Packages[idx], nil
 }
 
+func getHomeDir() (string, error) {
+	override := viper.GetString("home-dir")
+
+	if override == "" {
+		return os.UserHomeDir() //nolint:wrapcheck
+	}
+
+	if _, err := os.Stat(override); os.IsNotExist(err) {
+		return "", fmt.Errorf("provided home-dir does not exist: %w", err)
+	}
+
+	return override, nil
+}
+
 func NewContext() (Context, error) {
 	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := getHomeDir()
 	if err != nil {
 		return Context{}, fmt.Errorf("error determining home directory: %w", err)
 	}
@@ -91,4 +107,13 @@ func NewContext() (Context, error) {
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
 	}, err
+}
+
+func (c *Context) EnsureBinPathExists() error {
+	err := os.MkdirAll(c.BinPath, 0o755) //nolint:gomnd
+	if err != nil {
+		return fmt.Errorf("error creating bin path directory: %w", err)
+	}
+
+	return nil
 }

@@ -84,6 +84,11 @@ func getCurrentVersion(destPath string, binary Binary) (string, error) {
 func Install(context Context) error {
 	slog.Info("Installing configured packages")
 
+	err := context.EnsureBinPathExists()
+	if err != nil {
+		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
+	}
+
 	for _, binary := range context.Binaries {
 		destPath := path.Join(context.BinPath, binary.Name)
 		// if destination file exists
@@ -117,7 +122,7 @@ func Install(context Context) error {
 
 		// write binary as executable to file system
 		//nolint:gosec,gomnd
-		err = os.WriteFile(destPath, data, 0o744)
+		err = os.WriteFile(destPath, data, 0o755)
 		if err != nil {
 			return fmt.Errorf("error writing binary to disk: %w", err)
 		}

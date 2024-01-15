@@ -42,13 +42,17 @@ func makeRootCommand() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().String("log-level", "warn", "Logging level (i.e. debug, info, warn, error) (GRAB_LOG_LEVEL)")
+	rootCmd.PersistentFlags().String("home-dir", "", "Directory to treat as home directory (GRAB_HOME_DIR)")
+
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")) //nolint:errcheck
 	viper.SetDefault("log-level", "warn")
+
+	viper.BindPFlag("home-dir", rootCmd.PersistentFlags().Lookup("home-dir")) //nolint:errcheck
+	viper.SetDefault("home-dir", "")
 
 	viper.SetEnvPrefix("grab")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
-	// viper.BindEnv("log-level")
 
 	rootCmd.AddCommand(makeInstallCommand())
 	rootCmd.AddCommand(makeUpdateCommand())
