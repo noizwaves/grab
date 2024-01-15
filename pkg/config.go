@@ -21,8 +21,10 @@ type repository struct {
 }
 
 type configPackage struct {
-	Metadata configPackageMetadata `yaml:"metadata"`
-	Spec     configPackageSpec     `yaml:"spec"`
+	APIVersion string                `yaml:"apiVersion"`
+	Kind       string                `yaml:"kind"`
+	Metadata   configPackageMetadata `yaml:"metadata"`
+	Spec       configPackageSpec     `yaml:"spec"`
 }
 
 type configPackageMetadata struct {
@@ -57,7 +59,10 @@ func loadConfig(path string) (configRoot, error) {
 	slog.Debug("Loaded config from disk", "content", string(data))
 
 	output := configRoot{}
-	err = yaml.Unmarshal(data, &output)
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	decoder.KnownFields(true)
+	err = decoder.Decode(&output)
+
 	if err != nil {
 		return configRoot{}, fmt.Errorf("error parsing config YAML: %w", err)
 	}
@@ -96,15 +101,17 @@ func loadPackage(path string) (configPackage, error) {
 	slog.Info("Loading package config from disk", "path", path)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return configPackage{}, fmt.Errorf("error reading package config file: %w", err)
+		return configPackage{}, fmt.Errorf("error reading package file: %w", err)
 	}
 
 	slog.Debug("Loaded package config from disk", "content", string(data))
 
 	output := configPackage{}
-	err = yaml.Unmarshal(data, &output)
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	decoder.KnownFields(true)
+	err = decoder.Decode(&output)
 	if err != nil {
-		return configPackage{}, fmt.Errorf("error parsing package config YAML: %w", err)
+		return configPackage{}, fmt.Errorf("error parsing package YAML: %w", err)
 	}
 
 	return output, nil

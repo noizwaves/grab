@@ -12,6 +12,8 @@ func TestLoadRepositoryValid(t *testing.T) {
 	expected := repository{
 		Packages: []configPackage{
 			{
+				APIVersion: "grab.noizwaves.com/v1alpha1",
+				Kind:       "Package",
 				Metadata: configPackageMetadata{
 					Name: "bar",
 				},
@@ -35,6 +37,8 @@ func TestLoadRepositoryValid(t *testing.T) {
 				},
 			},
 			{
+				APIVersion: "grab.noizwaves.com/v1alpha1",
+				Kind:       "Package",
 				Metadata: configPackageMetadata{
 					Name: "baz",
 				},
@@ -64,6 +68,13 @@ func TestLoadRepositoryValid(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestLoadRepositoryBlank(t *testing.T) {
+	_, err := loadRepository("testdata/repository/blank")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "error parsing package YAML")
+}
+
 func TestLoadConfigValid(t *testing.T) {
 	actual, err := loadConfig("testdata/configs/valid.yml")
 
@@ -76,4 +87,11 @@ func TestLoadConfigValid(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
+}
+
+func TestLoadConfigBlank(t *testing.T) {
+	_, err := loadConfig("testdata/configs/blank.yml")
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "error parsing config YAML")
 }
