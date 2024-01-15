@@ -51,7 +51,6 @@ packages:
 
 ## Development
 
-1. Install `goenv` and specified Go version
-1. Install `golangci-lint`: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2`
-1. Install `gofumpt`: `go install mvdan.cc/gofumpt@latest`
+1. Install `goenv`
+1. Run `./setup.sh`
 1. Generate a GitHub token and set it as the `GH_TOKEN` environment variable
