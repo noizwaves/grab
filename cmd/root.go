@@ -40,7 +40,7 @@ func makeRootCommand() *cobra.Command {
 		Use:   "grab",
 		Short: "A fast, sudo-less package manager for your terminal programs",
 		Long: `
-A fast, sudo-less package manager for your terminal programs. Downloads directly form GitHub.
+A fast, sudo-less package manager for your terminal programs. Downloads directly from GitHub.
 Supports macOS, Linux, and containers.
 `,
 	}

@@ -1,6 +1,6 @@
 # grab
 
-A fast, sudo-less package manager for your terminal programs. Downloads directly form GitHub. Supports macOS, Linux, and containers.
+A fast, sudo-less package manager for your terminal programs. Downloads directly from GitHub. Supports macOS, Linux, and containers.
 
 ## Usage
 
