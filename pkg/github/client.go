@@ -9,6 +9,30 @@ import (
 	"os"
 )
 
+type errorBody struct {
+	Message string `json:"message"`
+}
+
+func parseRelease(data []byte) (*Release, error) {
+	var output Release
+	err := json.Unmarshal(data, &output)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing response as JSON: %w", err)
+	}
+
+	return &output, nil
+}
+
+func parseError(data []byte) (*Release, error) {
+	var output errorBody
+	err := json.Unmarshal(data, &output)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing error response as JSON: %w", err)
+	}
+
+	return nil, fmt.Errorf(output.Message)
+}
+
 func GetLatestRelease(org, repo string) (*Release, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", org, repo)
 
@@ -35,11 +59,10 @@ func GetLatestRelease(org, repo string) (*Release, error) {
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	var output Release
-	err = json.Unmarshal(data, &output)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing response as JSON: %w", err)
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return parseRelease(data)
+	default:
+		return parseError(data)
 	}
-
-	return &output, nil
 }
