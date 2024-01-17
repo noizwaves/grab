@@ -17,7 +17,7 @@ type configRoot struct {
 }
 
 type repository struct {
-	Packages []configPackage
+	Packages []*configPackage
 }
 
 type configPackage struct {
@@ -49,11 +49,11 @@ type configProgram struct {
 	VersionRegex string   `yaml:"versionRegex"`
 }
 
-func loadConfig(path string) (configRoot, error) {
+func loadConfig(path string) (*configRoot, error) {
 	slog.Info("Loading config file from disk", "path", path)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return configRoot{}, fmt.Errorf("error reading config file: %w", err)
+		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
 	slog.Debug("Loaded config from disk", "content", string(data))
@@ -64,10 +64,10 @@ func loadConfig(path string) (configRoot, error) {
 	err = decoder.Decode(&output)
 
 	if err != nil {
-		return configRoot{}, fmt.Errorf("error parsing config YAML: %w", err)
+		return nil, fmt.Errorf("error parsing config YAML: %w", err)
 	}
 
-	return output, nil
+	return &output, nil
 }
 
 func saveConfig(config *configRoot, path string) error {
@@ -97,11 +97,11 @@ func saveConfig(config *configRoot, path string) error {
 	return nil
 }
 
-func loadPackage(path string) (configPackage, error) {
+func loadPackage(path string) (*configPackage, error) {
 	slog.Info("Loading package config from disk", "path", path)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return configPackage{}, fmt.Errorf("error reading package file: %w", err)
+		return nil, fmt.Errorf("error reading package file: %w", err)
 	}
 
 	slog.Debug("Loaded package config from disk", "content", string(data))
@@ -111,15 +111,15 @@ func loadPackage(path string) (configPackage, error) {
 	decoder.KnownFields(true)
 	err = decoder.Decode(&output)
 	if err != nil {
-		return configPackage{}, fmt.Errorf("error parsing package YAML: %w", err)
+		return nil, fmt.Errorf("error parsing package YAML: %w", err)
 	}
 
-	return output, nil
+	return &output, nil
 }
 
-func loadRepository(repoPath string) (repository, error) {
+func loadRepository(repoPath string) (*repository, error) {
 	slog.Info("Loading packages from repository on disk", "repoPath", repoPath)
-	packages := []configPackage{}
+	packages := []*configPackage{}
 
 	err := filepath.Walk(repoPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -146,12 +146,12 @@ func loadRepository(repoPath string) (repository, error) {
 		return nil
 	})
 	if err != nil {
-		return repository{}, fmt.Errorf("error loading repository: %w", err)
+		return nil, fmt.Errorf("error loading repository: %w", err)
 	}
 
 	slog.Info("Loaded packages from repository", "count", len(packages))
 
-	return repository{
+	return &repository{
 		Packages: packages,
 	}, nil
 }

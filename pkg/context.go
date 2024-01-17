@@ -18,7 +18,7 @@ const (
 )
 
 type Context struct {
-	Binaries     []Binary
+	Binaries     []*Binary
 	BinPath      string
 	ConfigPath   string
 	Config       *configRoot
@@ -37,7 +37,7 @@ func getPackageNames(repository *repository) []string {
 
 func locatePackage(repository *repository, name string) (*configPackage, error) {
 	slog.Debug("Looking for configured package in repository", "name", name)
-	idx := slices.IndexFunc(repository.Packages, func(p configPackage) bool { return p.Metadata.Name == name })
+	idx := slices.IndexFunc(repository.Packages, func(p *configPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
 		slog.Error("Package missing from repository", "name", name)
 
@@ -46,7 +46,7 @@ func locatePackage(repository *repository, name string) (*configPackage, error) 
 		return nil, fmt.Errorf("package %q missing from repository", name)
 	}
 
-	return &repository.Packages[idx], nil
+	return repository.Packages[idx], nil
 }
 
 func getHomeDir() (string, error) {
@@ -63,47 +63,47 @@ func getHomeDir() (string, error) {
 	return override, nil
 }
 
-func NewContext() (Context, error) {
+func NewContext() (*Context, error) {
 	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
 	homeDir, err := getHomeDir()
 	if err != nil {
-		return Context{}, fmt.Errorf("error determining home directory: %w", err)
+		return nil, fmt.Errorf("error determining home directory: %w", err)
 	}
 	slog.Debug("Configuration information", "homeDir", homeDir)
 
 	configPath := path.Join(homeDir, configPath)
 	config, err := loadConfig(configPath)
 	if err != nil {
-		return Context{}, fmt.Errorf("error loading config: %w", err)
+		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
 	repoPath := path.Join(homeDir, repositoryPath)
 	repository, err := loadRepository(repoPath)
 	if err != nil {
-		return Context{}, fmt.Errorf("error loading repository: %w", err)
+		return nil, fmt.Errorf("error loading repository: %w", err)
 	}
 
-	binaries := make([]Binary, 0)
+	binaries := make([]*Binary, 0)
 	for name, version := range config.Packages {
-		located, err := locatePackage(&repository, name)
+		located, err := locatePackage(repository, name)
 		if err != nil {
-			return Context{}, fmt.Errorf("error locating package information: %w", err)
+			return nil, fmt.Errorf("error locating package information: %w", err)
 		}
 
 		binary, err := NewBinary(name, version, *located)
 		if err != nil {
-			return Context{}, fmt.Errorf("error constructing binary %q: %w", name, err)
+			return nil, fmt.Errorf("error constructing binary %q: %w", name, err)
 		}
 
 		binaries = append(binaries, binary)
 	}
 
-	return Context{
+	return &Context{
 		Binaries:     binaries,
 		BinPath:      path.Join(homeDir, localBinPath),
 		ConfigPath:   configPath,
-		Config:       &config,
+		Config:       config,
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
 	}, err

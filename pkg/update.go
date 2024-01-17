@@ -7,7 +7,7 @@ import (
 	"github.com/noizwaves/grab/pkg/github"
 )
 
-func extractReleaseVersion(binary Binary, release github.Release) (string, error) {
+func extractReleaseVersion(binary *Binary, release *github.Release) (string, error) {
 	matches := binary.ReleaseRegex.FindStringSubmatch(release.Name)
 	if len(matches) == 0 {
 		return "", fmt.Errorf("release regex did not match name %q", release.Name)
@@ -20,7 +20,7 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 	config.Packages[binaryName] = version
 }
 
-func Update(context Context) error {
+func Update(context *Context) error {
 	slog.Info("Updating configured packages")
 
 	dirty := false
@@ -30,7 +30,7 @@ func Update(context Context) error {
 			return fmt.Errorf("error fetching latest release from GitHub: %w", err)
 		}
 
-		latestVersion, err := extractReleaseVersion(binary, *latestRelease)
+		latestVersion, err := extractReleaseVersion(binary, latestRelease)
 		if err != nil {
 			return fmt.Errorf("error extracting version from latest version: %w", err)
 		}

@@ -8,12 +8,6 @@ import (
 	"text/template"
 )
 
-type Override struct {
-	Platform     string
-	Architecture string
-	Extension    string
-}
-
 type Binary struct {
 	Name    string
 	Version string
@@ -32,18 +26,18 @@ type Binary struct {
 	VersionRegex *regexp.Regexp
 }
 
-func NewBinary(name, version string, config configPackage) (Binary, error) {
+func NewBinary(name, version string, config configPackage) (*Binary, error) {
 	versionRegex, err := regexp.Compile(config.Spec.Program.VersionRegex)
 	if err != nil {
-		return Binary{}, fmt.Errorf("version regex does not compile: %w", err)
+		return nil, fmt.Errorf("version regex does not compile: %w", err)
 	}
 
 	releaseRegex, err := regexp.Compile(config.Spec.GitHubRelease.VersionRegex)
 	if err != nil {
-		return Binary{}, fmt.Errorf("release regex does not compile: %w", err)
+		return nil, fmt.Errorf("release regex does not compile: %w", err)
 	}
 
-	return Binary{
+	return &Binary{
 		Name:    name,
 		Version: version,
 		// package

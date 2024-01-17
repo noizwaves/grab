@@ -64,7 +64,7 @@ func fetchBinaryData(binaryName string, sourceURL string) ([]byte, error) {
 	return data, nil
 }
 
-func getCurrentVersion(destPath string, binary Binary) (string, error) {
+func getCurrentVersion(destPath string, binary *Binary) (string, error) {
 	//nolint:gosec
 	cmd := exec.Command(destPath, binary.VersionArgs...)
 
@@ -81,7 +81,7 @@ func getCurrentVersion(destPath string, binary Binary) (string, error) {
 	return matches[0], nil
 }
 
-func Install(context Context) error {
+func Install(context *Context) error {
 	slog.Info("Installing configured packages")
 
 	err := context.EnsureBinPathExists()

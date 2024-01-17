@@ -9,8 +9,8 @@ import (
 func TestLoadRepositoryValid(t *testing.T) {
 	actual, err := loadRepository("testdata/repository/valid")
 
-	expected := repository{
-		Packages: []configPackage{
+	expected := &repository{
+		Packages: []*configPackage{
 			{
 				APIVersion: "grab.noizwaves.com/v1alpha1",
 				Kind:       "Package",
@@ -78,7 +78,7 @@ func TestLoadRepositoryBlank(t *testing.T) {
 func TestLoadConfigValid(t *testing.T) {
 	actual, err := loadConfig("testdata/configs/valid.yml")
 
-	expected := configRoot{
+	expected := &configRoot{
 		Packages: map[string]string{
 			"bar": "1.2.0",
 			"baz": "0.16.5",
