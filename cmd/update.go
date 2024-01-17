@@ -9,8 +9,9 @@ import (
 
 func makeUpdateCommand() *cobra.Command {
 	updateCmd := &cobra.Command{
-		Use:   "update",
-		Short: "Updates packages to use latest remote version",
+		Use:          "update",
+		Short:        "Updates packages to use latest remote version",
+		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)

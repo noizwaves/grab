@@ -9,8 +9,9 @@ import (
 
 func makeInstallCommand() *cobra.Command {
 	installCmd := &cobra.Command{
-		Use:   "install",
-		Short: "Install missing dependencies",
+		Use:          "install",
+		Short:        "Install missing dependencies",
+		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)
