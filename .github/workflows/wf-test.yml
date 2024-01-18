@@ -1,0 +1,23 @@
+name: Test the code
+
+on:
+  workflow_call
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Golang
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.6
+      - name: Build
+        run: go build -o tmp/grab main.go
+      - name: Test
+        run: go test -count=1 ./...
+      - name: Lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+          golangci-lint run ./...
