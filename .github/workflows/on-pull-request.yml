@@ -2,6 +2,10 @@ on: [pull_request]
 
 name: Pull Request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   test:
     uses: ./.github/workflows/wf-test.yml
