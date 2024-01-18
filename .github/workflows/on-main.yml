@@ -1,0 +1,10 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Main
+
+jobs:
+  test:
+    uses: ./.github/workflows/wf-test.yml

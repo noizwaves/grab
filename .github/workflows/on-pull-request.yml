@@ -1,0 +1,7 @@
+on: [pull_request]
+
+name: Pull Request
+
+jobs:
+  test:
+    uses: ./.github/workflows/wf-test.yml
