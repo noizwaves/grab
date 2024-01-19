@@ -24,6 +24,10 @@ jobs:
           MAJOR="0"
           MINOR="0"
           PATCH="$(git rev-list --count HEAD)"
+
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "Version is $VERSION"
+
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
   build:
     runs-on: ubuntu-latest
@@ -65,4 +69,4 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create ${{ needs.version.outputs.version }} --repo ${GITHUB_REPOSITORY} --generate-notes --target ${GITHUB_SHA} outputs/*
+        run: gh release create ${{ needs.version.outputs.version }} --repo ${GITHUB_REPOSITORY} --generate-notes --target ${GITHUB_SHA} output/*
