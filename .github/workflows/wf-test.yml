@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.21.6
-      - name: Build
+      - name: Compile
         run: go build -o tmp/grab main.go
       - name: Test
         run: go test -count=1 ./...
