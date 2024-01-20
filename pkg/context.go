@@ -12,9 +12,13 @@ import (
 )
 
 const (
-	localBinPath   = ".local/bin"
-	configPath     = ".grab/config.yml"
-	repositoryPath = ".grab/repository"
+	// defaults are relative to $HOME.
+
+	defaultBinPath       = ".local/bin"
+	defaultConfigDirPath = ".grab"
+
+	configFileName    = "config.yml"
+	repositoryDirName = "repository"
 )
 
 type Context struct {
@@ -49,36 +53,63 @@ func locatePackage(repository *repository, name string) (*configPackage, error) 
 	return repository.Packages[idx], nil
 }
 
-func getHomeDir() (string, error) {
-	override := viper.GetString("home-dir")
+func getConfigDirPath() (string, error) {
+	override := viper.GetString("config-path")
 
-	if override == "" {
-		return os.UserHomeDir() //nolint:wrapcheck
+	var configDirPath string
+	if override != "" {
+		configDirPath = override
+	} else {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("error determining home directory: %w", err)
+		}
+		configDirPath = path.Join(homeDir, defaultConfigDirPath)
 	}
 
-	if _, err := os.Stat(override); os.IsNotExist(err) {
-		return "", fmt.Errorf("provided home-dir does not exist: %w", err)
+	if _, err := os.Stat(configDirPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("config directory does not exist: %w", err)
 	}
 
-	return override, nil
+	return configDirPath, nil
+}
+
+func getBinPath() (string, error) {
+	override := viper.GetString("bin-path")
+
+	if override != "" {
+		return override, nil
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining home directory: %w", err)
+	}
+	binPath := path.Join(homeDir, defaultBinPath)
+
+	return binPath, nil
 }
 
 func NewContext() (*Context, error) {
 	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
-	homeDir, err := getHomeDir()
+	configPath, err := getConfigDirPath()
 	if err != nil {
-		return nil, fmt.Errorf("error determining home directory: %w", err)
+		return nil, fmt.Errorf("error getting config path: %w", err)
 	}
-	slog.Debug("Configuration information", "homeDir", homeDir)
 
-	configPath := path.Join(homeDir, configPath)
-	config, err := loadConfig(configPath)
+	binPath, err := getBinPath()
+	if err != nil {
+		return nil, fmt.Errorf("error getting bin path: %w", err)
+	}
+
+	configFilePath := path.Join(configPath, configFileName)
+	config, err := loadConfig(configFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
-	repoPath := path.Join(homeDir, repositoryPath)
+	repoPath := path.Join(configPath, repositoryDirName)
 	repository, err := loadRepository(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading repository: %w", err)
@@ -101,7 +132,7 @@ func NewContext() (*Context, error) {
 
 	return &Context{
 		Binaries:     binaries,
-		BinPath:      path.Join(homeDir, localBinPath),
+		BinPath:      binPath,
 		ConfigPath:   configPath,
 		Config:       config,
 		Platform:     runtime.GOOS,

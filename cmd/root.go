@@ -46,13 +46,17 @@ Supports macOS, Linux, and containers.
 	}
 
 	rootCmd.PersistentFlags().String("log-level", "warn", "Logging level (i.e. debug, info, warn, error) (GRAB_LOG_LEVEL)")
-	rootCmd.PersistentFlags().String("home-dir", "", "Directory to treat as home directory (GRAB_HOME_DIR)")
+	rootCmd.PersistentFlags().String("config-path", "", "Config dir (GRAB_CONFIG_PATH) (default \"~/.grab\")")
+	rootCmd.PersistentFlags().String("bin-path", "", "Dir to install binaries (GRAB_BIN_PATH) (default \"~/.local/bin\")")
 
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")) //nolint:errcheck
 	viper.SetDefault("log-level", "warn")
 
-	viper.BindPFlag("home-dir", rootCmd.PersistentFlags().Lookup("home-dir")) //nolint:errcheck
-	viper.SetDefault("home-dir", "")
+	viper.BindPFlag("config-path", rootCmd.PersistentFlags().Lookup("config-path")) //nolint:errcheck
+	viper.SetDefault("config-path", "")
+
+	viper.BindPFlag("bin-path", rootCmd.PersistentFlags().Lookup("bin-path")) //nolint:errcheck
+	viper.SetDefault("bin-path", "")
 
 	viper.SetEnvPrefix("grab")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
