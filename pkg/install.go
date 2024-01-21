@@ -81,6 +81,27 @@ func getCurrentVersion(destPath string, binary *Binary) (string, error) {
 	return matches[0], nil
 }
 
+func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
+	// Explicitly remove an existing binary file. Although this could leave the file system in a bad state,
+	// it is required for grab to be able to update itself.
+	if _, err := os.Stat(destPath); err == nil {
+		slog.Info("Removing existing binary", "name", binary.Name)
+
+		err = os.Remove(destPath)
+		if err != nil {
+			return fmt.Errorf("error removing existing binary: %w", err)
+		}
+	}
+
+	//nolint:gosec,gomnd
+	err := os.WriteFile(destPath, *data, 0o755)
+	if err != nil {
+		return fmt.Errorf("error writing binary to disk: %w", err)
+	}
+
+	return nil
+}
+
 func Install(context *Context) error {
 	slog.Info("Installing configured packages")
 
@@ -120,11 +141,8 @@ func Install(context *Context) error {
 			return fmt.Errorf("error downloading binary for %s: %w", binary.Name, err)
 		}
 
-		// write binary as executable to file system
-		//nolint:gosec,gomnd
-		err = os.WriteFile(destPath, data, 0o755)
-		if err != nil {
-			return fmt.Errorf("error writing binary to disk: %w", err)
+		if err := writeToDisk(binary, &data, destPath); err != nil {
+			return err
 		}
 
 		fmt.Println(" Done!")
