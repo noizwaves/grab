@@ -1,0 +1,18 @@
+apiVersion: grab.noizwaves.com/v1alpha1
+kind: Package
+metadata:
+  name: grab
+spec:
+  gitHubRelease:
+    org: noizwaves
+    repo: grab
+    name: "v{{ .Version }}"
+    versionRegex: \d+\.\d+\.\d+
+    fileName:
+      darwin,amd64: grab-darwin-amd64
+      darwin,arm64: grab-darwin-arm64
+      linux,amd64: grab-linux-amd64
+      linux,arm64: grab-linux-arm64
+  program:
+    versionArgs: [version]
+    versionRegex: \d+\.\d+\.\d+
