@@ -133,7 +133,7 @@ func NewContext() (*Context, error) {
 	return &Context{
 		Binaries:     binaries,
 		BinPath:      binPath,
-		ConfigPath:   configPath,
+		ConfigPath:   configFilePath,
 		Config:       config,
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
