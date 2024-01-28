@@ -21,12 +21,16 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 	config.Packages[binaryName] = version
 }
 
-func Update(context *Context, out io.Writer) error {
+type Updater struct {
+	GitHubClient github.Client
+}
+
+func (u *Updater) Update(context *Context, out io.Writer) error {
 	slog.Info("Updating configured packages")
 
 	dirty := false
 	for _, binary := range context.Binaries {
-		latestRelease, err := github.GetLatestRelease(binary.Org, binary.Repo)
+		latestRelease, err := u.GitHubClient.GetLatestRelease(binary.Org, binary.Repo)
 		if err != nil {
 			return fmt.Errorf("error fetching latest release from GitHub: %w", err)
 		}

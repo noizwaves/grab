@@ -66,3 +66,45 @@ func GetLatestRelease(org, repo string) (*Release, error) {
 		return parseError(data)
 	}
 }
+
+type Client interface {
+	GetLatestRelease(org, repo string) (*Release, error)
+	DownloadReleaseAsset(org, repo, releaseName, assetName string) ([]byte, error)
+}
+
+type ClientImpl struct{}
+
+func NewClient() *ClientImpl {
+	return &ClientImpl{}
+}
+
+func (g *ClientImpl) GetLatestRelease(org, repo string) (*Release, error) {
+	return GetLatestRelease(org, repo)
+}
+
+func (g *ClientImpl) DownloadReleaseAsset(org, repo, release, asset string) ([]byte, error) {
+	url := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
+		org, repo, release, asset)
+
+	return downloadArtifact(url)
+}
+
+func downloadArtifact(url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error requesting asset: %w", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	return data, nil
+}

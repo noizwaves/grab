@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/noizwaves/grab/pkg"
+	"github.com/noizwaves/grab/pkg/github"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,8 @@ func makeUpdateCommand() *cobra.Command {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			err = pkg.Update(context, os.Stdout)
+			updater := pkg.Updater{GitHubClient: github.NewClient()}
+			err = updater.Update(context, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error upgrading: %w", err)
 			}

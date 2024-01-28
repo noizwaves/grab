@@ -52,18 +52,16 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 	}, nil
 }
 
-func (b *Binary) GetURL(platform, arch string) (string, error) {
+func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	key := platform + "," + arch
-	fileName, ok := b.FileName[key]
+	fileNameTmplStr, ok := b.FileName[key]
 	if !ok {
 		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
 	}
 
-	templateURL := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
-		b.Org, b.Repo, b.ReleaseName, fileName)
-	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(templateURL)
+	tmpl, err := template.New("filename:" + b.Name).Parse(fileNameTmplStr)
 	if err != nil {
-		return "", fmt.Errorf("error parsing source template: %w", err)
+		return "", fmt.Errorf("error parsing asset filename template: %w", err)
 	}
 
 	vm := newURLViewModel(b)
@@ -71,7 +69,24 @@ func (b *Binary) GetURL(platform, arch string) (string, error) {
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, vm)
 	if err != nil {
-		return "", fmt.Errorf("error rendering source template: %w", err)
+		return "", fmt.Errorf("error rendering asset filename template: %w", err)
+	}
+
+	return output.String(), nil
+}
+
+func (b *Binary) GetReleaseName() (string, error) {
+	tmpl, err := template.New("releaseName:" + b.Name).Parse(b.ReleaseName)
+	if err != nil {
+		return "", fmt.Errorf("error parsing release name template: %w", err)
+	}
+
+	vm := newURLViewModel(b)
+
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, vm)
+	if err != nil {
+		return "", fmt.Errorf("error rendering release name template: %w", err)
 	}
 
 	return output.String(), nil
