@@ -24,7 +24,10 @@ func makeUpdateCommand() *cobra.Command {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			updater := pkg.Updater{GitHubClient: github.NewClient()}
+			updater := pkg.Updater{
+				GitHubClient: github.NewClient(),
+			}
+
 			err = updater.Update(context, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error upgrading: %w", err)

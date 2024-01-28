@@ -24,7 +24,10 @@ func makeInstallCommand() *cobra.Command {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			installer := pkg.Installer{GitHubClient: github.NewClient()}
+			installer := pkg.Installer{
+				GitHubClient: github.NewClient(),
+			}
+
 			err = installer.Install(context, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
