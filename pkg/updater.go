@@ -8,19 +8,6 @@ import (
 	"github.com/noizwaves/grab/pkg/github"
 )
 
-func extractReleaseVersion(binary *Binary, release *github.Release) (string, error) {
-	matches := binary.ReleaseRegex.FindStringSubmatch(release.Name)
-	if len(matches) == 0 {
-		return "", fmt.Errorf("release regex did not match name %q", release.Name)
-	}
-
-	return matches[0], nil
-}
-
-func setBinaryVersion(config *configRoot, binaryName, version string) {
-	config.Packages[binaryName] = version
-}
-
 type Updater struct {
 	GitHubClient github.Client
 }
@@ -61,4 +48,17 @@ func (u *Updater) Update(context *Context, out io.Writer) error {
 	}
 
 	return nil
+}
+
+func extractReleaseVersion(binary *Binary, release *github.Release) (string, error) {
+	matches := binary.ReleaseRegex.FindStringSubmatch(release.Name)
+	if len(matches) == 0 {
+		return "", fmt.Errorf("release regex did not match name %q", release.Name)
+	}
+
+	return matches[0], nil
+}
+
+func setBinaryVersion(config *configRoot, binaryName, version string) {
+	config.Packages[binaryName] = version
 }

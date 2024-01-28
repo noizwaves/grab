@@ -13,6 +13,53 @@ import (
 	"github.com/noizwaves/grab/pkg/github"
 )
 
+type Installer struct {
+	GitHubClient github.Client
+}
+
+func (i *Installer) Install(context *Context, out io.Writer) error {
+	slog.Info("Installing configured packages")
+
+	err := context.EnsureBinPathExists()
+	if err != nil {
+		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
+	}
+
+	for _, binary := range context.Binaries {
+		destPath := path.Join(context.BinPath, binary.Name)
+		// if destination file exists
+		if _, err := os.Stat(destPath); err == nil {
+			currentVersion, err := getCurrentVersion(destPath, binary)
+			if err != nil {
+				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
+			}
+
+			if binary.ShouldReplace(currentVersion) {
+				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
+			} else {
+				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
+
+				continue
+			}
+		} else {
+			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.Version)
+		}
+
+		data, err := fetchExecutable(i.GitHubClient, context, binary)
+		if err != nil {
+			return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
+		}
+
+		if err := writeToDisk(binary, &data, destPath); err != nil {
+			return err
+		}
+
+		fmt.Fprintln(out, " Done!")
+	}
+
+	return nil
+}
+
 func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) ([]byte, error) {
 	slog.Info("Downloading asset", "binary", binary.Name, "version", binary.Version)
 
@@ -95,53 +142,6 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	err := os.WriteFile(destPath, *data, 0o755)
 	if err != nil {
 		return fmt.Errorf("error writing binary to disk: %w", err)
-	}
-
-	return nil
-}
-
-type Installer struct {
-	GitHubClient github.Client
-}
-
-func (i *Installer) Install(context *Context, out io.Writer) error {
-	slog.Info("Installing configured packages")
-
-	err := context.EnsureBinPathExists()
-	if err != nil {
-		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
-	}
-
-	for _, binary := range context.Binaries {
-		destPath := path.Join(context.BinPath, binary.Name)
-		// if destination file exists
-		if _, err := os.Stat(destPath); err == nil {
-			currentVersion, err := getCurrentVersion(destPath, binary)
-			if err != nil {
-				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
-			}
-
-			if binary.ShouldReplace(currentVersion) {
-				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
-			} else {
-				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
-
-				continue
-			}
-		} else {
-			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.Version)
-		}
-
-		data, err := fetchExecutable(i.GitHubClient, context, binary)
-		if err != nil {
-			return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
-		}
-
-		if err := writeToDisk(binary, &data, destPath); err != nil {
-			return err
-		}
-
-		fmt.Fprintln(out, " Done!")
 	}
 
 	return nil
