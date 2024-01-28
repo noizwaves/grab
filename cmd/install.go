@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/noizwaves/grab/pkg"
 	"github.com/spf13/cobra"
@@ -22,7 +23,7 @@ func makeInstallCommand() *cobra.Command {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			err = pkg.Install(context)
+			err = pkg.Install(context, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}

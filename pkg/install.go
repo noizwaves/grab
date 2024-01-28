@@ -102,7 +102,7 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	return nil
 }
 
-func Install(context *Context) error {
+func Install(context *Context, out io.Writer) error {
 	slog.Info("Installing configured packages")
 
 	err := context.EnsureBinPathExists()
@@ -120,14 +120,14 @@ func Install(context *Context) error {
 			}
 
 			if binary.ShouldReplace(currentVersion) {
-				fmt.Printf("%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
+				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
 			} else {
-				fmt.Printf("%s: %s already installed\n", binary.Name, currentVersion)
+				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
 
 				continue
 			}
 		} else {
-			fmt.Printf("%s: installing %s...", binary.Name, binary.Version)
+			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.Version)
 		}
 
 		// download and extract target URL
@@ -145,7 +145,7 @@ func Install(context *Context) error {
 			return err
 		}
 
-		fmt.Println(" Done!")
+		fmt.Fprintln(out, " Done!")
 	}
 
 	return nil

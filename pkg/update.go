@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/noizwaves/grab/pkg/github"
@@ -20,7 +21,7 @@ func setBinaryVersion(config *configRoot, binaryName, version string) {
 	config.Packages[binaryName] = version
 }
 
-func Update(context *Context) error {
+func Update(context *Context, out io.Writer) error {
 	slog.Info("Updating configured packages")
 
 	dirty := false
@@ -36,9 +37,9 @@ func Update(context *Context) error {
 		}
 
 		if latestVersion == binary.Version {
-			fmt.Printf("%s: %s is latest\n", binary.Name, binary.Version)
+			fmt.Fprintf(out, "%s: %s is latest\n", binary.Name, binary.Version)
 		} else {
-			fmt.Printf("%s: %s -> %s (%s)\n", binary.Name, binary.Version, latestVersion, latestRelease.URL)
+			fmt.Fprintf(out, "%s: %s -> %s (%s)\n", binary.Name, binary.Version, latestVersion, latestRelease.URL)
 			dirty = true
 			setBinaryVersion(context.Config, binary.Name, latestVersion)
 		}
@@ -50,7 +51,7 @@ func Update(context *Context) error {
 			return fmt.Errorf("error updating config file: %w", err)
 		}
 
-		fmt.Println("\nUpdated config file. Now run `grab install`.")
+		fmt.Fprintln(out, "\nUpdated config file. Now run `grab install`.")
 	} else {
 		slog.Debug("No config changes required, no versions were changed")
 	}
