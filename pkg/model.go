@@ -9,8 +9,8 @@ import (
 )
 
 type Binary struct {
-	Name    string
-	Version string
+	Name          string
+	PinnedVersion string
 
 	// source
 	Org  string
@@ -38,8 +38,8 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 	}
 
 	return &Binary{
-		Name:    name,
-		Version: version,
+		Name:          name,
+		PinnedVersion: version,
 		// package
 		Org:          config.Spec.GitHubRelease.Org,
 		Repo:         config.Spec.GitHubRelease.Repo,
@@ -93,9 +93,9 @@ func (b *Binary) GetReleaseName() (string, error) {
 }
 
 func (b *Binary) ShouldReplace(currentVersion string) bool {
-	result := b.Version != currentVersion
+	result := b.PinnedVersion != currentVersion
 	slog.Info("Checking if installed binary should be replaced", "name", b.Name, "replace", result)
-	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.Version)
+	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.PinnedVersion)
 
 	return result
 }
@@ -106,6 +106,6 @@ type urlViewModel struct {
 
 func newURLViewModel(binary *Binary) urlViewModel {
 	return urlViewModel{
-		Version: binary.Version,
+		Version: binary.PinnedVersion,
 	}
 }

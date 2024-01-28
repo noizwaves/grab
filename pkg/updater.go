@@ -27,10 +27,10 @@ func (u *Updater) Update(context *Context, out io.Writer) error {
 			return fmt.Errorf("error extracting version from latest version: %w", err)
 		}
 
-		if latestVersion == binary.Version {
-			fmt.Fprintf(out, "%s: %s is latest\n", binary.Name, binary.Version)
+		if latestVersion == binary.PinnedVersion {
+			fmt.Fprintf(out, "%s: %s is latest\n", binary.Name, binary.PinnedVersion)
 		} else {
-			fmt.Fprintf(out, "%s: %s -> %s (%s)\n", binary.Name, binary.Version, latestVersion, latestRelease.URL)
+			fmt.Fprintf(out, "%s: %s -> %s (%s)\n", binary.Name, binary.PinnedVersion, latestVersion, latestRelease.URL)
 			dirty = true
 			setBinaryVersion(context.Config, binary.Name, latestVersion)
 		}

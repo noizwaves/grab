@@ -8,11 +8,11 @@ import (
 
 func TestGetAssetFileName(t *testing.T) {
 	base := Binary{
-		Name:        "foo",
-		Version:     "1.2.3",
-		Org:         "bar",
-		Repo:        "foo",
-		ReleaseName: "{{ .Version }}",
+		Name:          "foo",
+		PinnedVersion: "1.2.3",
+		Org:           "bar",
+		Repo:          "foo",
+		ReleaseName:   "{{ .Version }}",
 		FileName: map[string]string{
 			"linux,arm64": "foo",
 		},
@@ -62,11 +62,11 @@ func TestGetAssetFileName(t *testing.T) {
 
 func TestGetReleaseName(t *testing.T) {
 	base := Binary{
-		Name:        "foo",
-		Version:     "1.2.3",
-		Org:         "bar",
-		Repo:        "foo",
-		ReleaseName: "{{ .Version }}",
+		Name:          "foo",
+		PinnedVersion: "1.2.3",
+		Org:           "bar",
+		Repo:          "foo",
+		ReleaseName:   "{{ .Version }}",
 		FileName: map[string]string{
 			"linux,arm64": "foo",
 		},
@@ -100,11 +100,11 @@ func TestGetReleaseName(t *testing.T) {
 
 func TestBinaryShouldReplace(t *testing.T) {
 	base := Binary{
-		Name:        "foo",
-		Version:     "1.2.3",
-		Org:         "bar",
-		Repo:        "foo",
-		ReleaseName: "{{ .Version }}",
+		Name:          "foo",
+		PinnedVersion: "1.2.3",
+		Org:           "bar",
+		Repo:          "foo",
+		ReleaseName:   "{{ .Version }}",
 		FileName: map[string]string{
 			"linux,arm64": "foo",
 		},

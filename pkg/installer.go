@@ -35,14 +35,14 @@ func (i *Installer) Install(context *Context, out io.Writer) error {
 			}
 
 			if binary.ShouldReplace(currentVersion) {
-				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.Version, currentVersion)
+				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.PinnedVersion, currentVersion)
 			} else {
 				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
 
 				continue
 			}
 		} else {
-			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.Version)
+			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
 		}
 
 		data, err := fetchExecutable(i.GitHubClient, context, binary)
@@ -61,7 +61,7 @@ func (i *Installer) Install(context *Context, out io.Writer) error {
 }
 
 func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) ([]byte, error) {
-	slog.Info("Downloading asset", "binary", binary.Name, "version", binary.Version)
+	slog.Info("Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
 
 	asset, err := binary.GetAssetFileName(context.Platform, context.Architecture)
 	if err != nil {
