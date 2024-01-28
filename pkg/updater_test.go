@@ -6,12 +6,15 @@ import (
 	"testing"
 
 	"github.com/noizwaves/grab/pkg/github"
+	"github.com/noizwaves/grab/pkg/internal/asserth"
+	"github.com/noizwaves/grab/pkg/internal/githubh"
+	"github.com/noizwaves/grab/pkg/internal/osh"
 	"github.com/stretchr/testify/assert"
 )
 
 // Simple test that updates the version of a single package.
 func TestUpdate(t *testing.T) {
-	configDir := copyExistingDir(t, "testdata/contexts/simple")
+	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 
 	context, err := NewContext(configDir, t.TempDir())
 	if err != nil {
@@ -19,8 +22,8 @@ func TestUpdate(t *testing.T) {
 	}
 
 	updater := Updater{
-		GitHubClient: &mockGitHubClient{
-			release: &github.Release{
+		GitHubClient: &githubh.MockGitHubClient{
+			Release: &github.Release{
 				Name: "2.0.0",
 				URL:  "https://fakegithub.com/release-information",
 			},
@@ -33,5 +36,5 @@ func TestUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "bar: 1.0.0 -> 2.0.0 (https://fakegithub.com/release-information)")
 
-	assertFileContents(t, path.Join(configDir, "config.yml"), "packages:\n  bar: 2.0.0\n")
+	asserth.FileContents(t, path.Join(configDir, "config.yml"), "packages:\n  bar: 2.0.0\n")
 }
