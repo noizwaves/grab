@@ -7,8 +7,6 @@ import (
 	"path"
 	"runtime"
 	"slices"
-
-	"github.com/spf13/viper"
 )
 
 const (
@@ -53,9 +51,7 @@ func locatePackage(repository *repository, name string) (*configPackage, error) 
 	return repository.Packages[idx], nil
 }
 
-func getConfigDirPath() (string, error) {
-	override := viper.GetString("config-path")
-
+func getConfigDirPath(override string) (string, error) {
 	var configDirPath string
 	if override != "" {
 		configDirPath = override
@@ -74,9 +70,7 @@ func getConfigDirPath() (string, error) {
 	return configDirPath, nil
 }
 
-func getBinPath() (string, error) {
-	override := viper.GetString("bin-path")
-
+func getBinPath(override string) (string, error) {
 	if override != "" {
 		return override, nil
 	}
@@ -90,15 +84,15 @@ func getBinPath() (string, error) {
 	return binPath, nil
 }
 
-func NewContext() (*Context, error) {
+func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
-	configPath, err := getConfigDirPath()
+	configPath, err := getConfigDirPath(configPathOverride)
 	if err != nil {
 		return nil, fmt.Errorf("error getting config path: %w", err)
 	}
 
-	binPath, err := getBinPath()
+	binPath, err := getBinPath(binPathOverride)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bin path: %w", err)
 	}

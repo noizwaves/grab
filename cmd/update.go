@@ -17,7 +17,7 @@ func makeUpdateCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := pkg.NewContext()
+			context, err := newContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
 			}
