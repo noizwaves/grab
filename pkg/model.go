@@ -9,17 +9,19 @@ import (
 )
 
 type Binary struct {
-	Name    string
-	Version string
+	Name          string
+	PinnedVersion string
 
 	// source
 	Org  string
 	Repo string
-	// release name template
-	ReleaseName  string
+
+	// Release Name template
+	releaseName  string
 	ReleaseRegex *regexp.Regexp
+
 	// (platform,arch) -> filename template
-	FileName map[string]string
+	fileName map[string]string
 
 	// program related fields
 	VersionArgs  []string
@@ -38,32 +40,30 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 	}
 
 	return &Binary{
-		Name:    name,
-		Version: version,
+		Name:          name,
+		PinnedVersion: version,
 		// package
 		Org:          config.Spec.GitHubRelease.Org,
 		Repo:         config.Spec.GitHubRelease.Repo,
-		ReleaseName:  config.Spec.GitHubRelease.Name,
+		releaseName:  config.Spec.GitHubRelease.Name,
 		ReleaseRegex: releaseRegex,
-		FileName:     config.Spec.GitHubRelease.FileName,
+		fileName:     config.Spec.GitHubRelease.FileName,
 		// program
 		VersionArgs:  config.Spec.Program.VersionArgs,
 		VersionRegex: versionRegex,
 	}, nil
 }
 
-func (b *Binary) GetURL(platform, arch string) (string, error) {
+func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	key := platform + "," + arch
-	fileName, ok := b.FileName[key]
+	fileNameTmplStr, ok := b.fileName[key]
 	if !ok {
 		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
 	}
 
-	templateURL := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
-		b.Org, b.Repo, b.ReleaseName, fileName)
-	tmpl, err := template.New("sourceUrl:" + b.Name).Parse(templateURL)
+	tmpl, err := template.New("filename:" + b.Name).Parse(fileNameTmplStr)
 	if err != nil {
-		return "", fmt.Errorf("error parsing source template: %w", err)
+		return "", fmt.Errorf("error parsing asset filename template: %w", err)
 	}
 
 	vm := newURLViewModel(b)
@@ -71,16 +71,33 @@ func (b *Binary) GetURL(platform, arch string) (string, error) {
 	var output bytes.Buffer
 	err = tmpl.Execute(&output, vm)
 	if err != nil {
-		return "", fmt.Errorf("error rendering source template: %w", err)
+		return "", fmt.Errorf("error rendering asset filename template: %w", err)
+	}
+
+	return output.String(), nil
+}
+
+func (b *Binary) GetReleaseName() (string, error) {
+	tmpl, err := template.New("releaseName:" + b.Name).Parse(b.releaseName)
+	if err != nil {
+		return "", fmt.Errorf("error parsing release name template: %w", err)
+	}
+
+	vm := newURLViewModel(b)
+
+	var output bytes.Buffer
+	err = tmpl.Execute(&output, vm)
+	if err != nil {
+		return "", fmt.Errorf("error rendering release name template: %w", err)
 	}
 
 	return output.String(), nil
 }
 
 func (b *Binary) ShouldReplace(currentVersion string) bool {
-	result := b.Version != currentVersion
+	result := b.PinnedVersion != currentVersion
 	slog.Info("Checking if installed binary should be replaced", "name", b.Name, "replace", result)
-	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.Version)
+	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.PinnedVersion)
 
 	return result
 }
@@ -91,6 +108,6 @@ type urlViewModel struct {
 
 func newURLViewModel(binary *Binary) urlViewModel {
 	return urlViewModel{
-		Version: binary.Version,
+		Version: binary.PinnedVersion,
 	}
 }

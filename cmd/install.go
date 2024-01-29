@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/noizwaves/grab/pkg"
+	"github.com/noizwaves/grab/pkg/github"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +19,16 @@ func makeInstallCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := pkg.NewContext()
+			context, err := newContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
 			}
 
-			err = pkg.Install(context)
+			installer := pkg.Installer{
+				GitHubClient: github.NewClient(),
+			}
+
+			err = installer.Install(context, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}

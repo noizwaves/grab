@@ -7,8 +7,6 @@ import (
 	"path"
 	"runtime"
 	"slices"
-
-	"github.com/spf13/viper"
 )
 
 const (
@@ -30,75 +28,15 @@ type Context struct {
 	Architecture string
 }
 
-func getPackageNames(repository *repository) []string {
-	names := make([]string, len(repository.Packages))
-	for idx, pkg := range repository.Packages {
-		names[idx] = pkg.Metadata.Name
-	}
-
-	return names
-}
-
-func locatePackage(repository *repository, name string) (*configPackage, error) {
-	slog.Debug("Looking for configured package in repository", "name", name)
-	idx := slices.IndexFunc(repository.Packages, func(p *configPackage) bool { return p.Metadata.Name == name })
-	if idx == -1 {
-		slog.Error("Package missing from repository", "name", name)
-
-		slog.Debug("Repository contains", "packageNames", getPackageNames(repository))
-
-		return nil, fmt.Errorf("package %q missing from repository", name)
-	}
-
-	return repository.Packages[idx], nil
-}
-
-func getConfigDirPath() (string, error) {
-	override := viper.GetString("config-path")
-
-	var configDirPath string
-	if override != "" {
-		configDirPath = override
-	} else {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("error determining home directory: %w", err)
-		}
-		configDirPath = path.Join(homeDir, defaultConfigDirPath)
-	}
-
-	if _, err := os.Stat(configDirPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("config directory does not exist: %w", err)
-	}
-
-	return configDirPath, nil
-}
-
-func getBinPath() (string, error) {
-	override := viper.GetString("bin-path")
-
-	if override != "" {
-		return override, nil
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("error determining home directory: %w", err)
-	}
-	binPath := path.Join(homeDir, defaultBinPath)
-
-	return binPath, nil
-}
-
-func NewContext() (*Context, error) {
+func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
-	configPath, err := getConfigDirPath()
+	configPath, err := getConfigDirPath(configPathOverride)
 	if err != nil {
 		return nil, fmt.Errorf("error getting config path: %w", err)
 	}
 
-	binPath, err := getBinPath()
+	binPath, err := getBinPath(binPathOverride)
 	if err != nil {
 		return nil, fmt.Errorf("error getting bin path: %w", err)
 	}
@@ -147,4 +85,60 @@ func (c *Context) EnsureBinPathExists() error {
 	}
 
 	return nil
+}
+
+func getPackageNames(repository *repository) []string {
+	names := make([]string, len(repository.Packages))
+	for idx, pkg := range repository.Packages {
+		names[idx] = pkg.Metadata.Name
+	}
+
+	return names
+}
+
+func locatePackage(repository *repository, name string) (*configPackage, error) {
+	slog.Debug("Looking for configured package in repository", "name", name)
+	idx := slices.IndexFunc(repository.Packages, func(p *configPackage) bool { return p.Metadata.Name == name })
+	if idx == -1 {
+		slog.Error("Package missing from repository", "name", name)
+
+		slog.Debug("Repository contains", "packageNames", getPackageNames(repository))
+
+		return nil, fmt.Errorf("package %q missing from repository", name)
+	}
+
+	return repository.Packages[idx], nil
+}
+
+func getConfigDirPath(override string) (string, error) {
+	var configDirPath string
+	if override != "" {
+		configDirPath = override
+	} else {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("error determining home directory: %w", err)
+		}
+		configDirPath = path.Join(homeDir, defaultConfigDirPath)
+	}
+
+	if _, err := os.Stat(configDirPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("config directory does not exist: %w", err)
+	}
+
+	return configDirPath, nil
+}
+
+func getBinPath(override string) (string, error) {
+	if override != "" {
+		return override, nil
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining home directory: %w", err)
+	}
+	binPath := path.Join(homeDir, defaultBinPath)
+
+	return binPath, nil
 }

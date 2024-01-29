@@ -1,10 +1,10 @@
 package pkg
 
 import (
-	"os"
 	"path"
 	"testing"
 
+	"github.com/noizwaves/grab/pkg/internal/asserth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -98,15 +98,6 @@ func TestLoadConfigBlank(t *testing.T) {
 	assert.ErrorContains(t, err, "error parsing config YAML")
 }
 
-func assertFileContents(t *testing.T, path, expected string) {
-	t.Helper()
-
-	actual, err := os.ReadFile(path)
-	assert.NoError(t, err)
-
-	assert.Equal(t, expected, string(actual))
-}
-
 func TestSaveConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -126,5 +117,5 @@ func TestSaveConfig(t *testing.T) {
 	expectedContent := "packages:\n" +
 		"  bar: 1.2.0\n" +
 		"  baz: 0.16.5\n"
-	assertFileContents(t, actualPath, expectedContent)
+	asserth.FileContents(t, actualPath, expectedContent)
 }
