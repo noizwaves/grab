@@ -126,23 +126,37 @@ func getCurrentVersion(destPath string, binary *Binary) (string, error) {
 	return matches[0], nil
 }
 
+// Write the executable to disk as atomically as possible.
+// First, it writes to a temporary file, then it moves the temporary file to the destination path.
 func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
-	// Explicitly remove an existing binary file. Although this could leave the file system in a bad state,
-	// it is required for grab to be able to update itself.
-	if _, err := os.Stat(destPath); err == nil {
-		slog.Info("Removing existing binary", "name", binary.Name)
-
-		err = os.Remove(destPath)
-		if err != nil {
-			return fmt.Errorf("error removing existing binary: %w", err)
-		}
+	tempDir, err := os.MkdirTemp("", "grab-installer-temp")
+	if err != nil {
+		return fmt.Errorf("error creating temp dir: %w", err)
 	}
 
+	tempPath := path.Join(tempDir, binary.Name)
+	slog.Debug("Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
+
 	//nolint:gosec,gomnd
-	err := os.WriteFile(destPath, *data, 0o755)
+	err = os.WriteFile(tempPath, *data, 0o755)
 	if err != nil {
-		return fmt.Errorf("error writing binary to disk: %w", err)
+		return fmt.Errorf("error writing executable to temp location: %w", err)
+	}
+	defer tryRemoveFromFilesystem(tempPath)
+
+	err = os.Rename(tempPath, destPath)
+	if err != nil {
+		return fmt.Errorf("error moving temp to destination: %w", err)
 	}
 
 	return nil
+}
+
+// Try to remove a file or directory from filesystem, and warn on an error.
+func tryRemoveFromFilesystem(path string) {
+	if _, err := os.Stat(path); err == nil {
+		if err := os.Remove(path); err != nil {
+			slog.Warn("Failed to remove file", "path", path)
+		}
+	}
 }
