@@ -12,8 +12,8 @@ func TestGetAssetFileName(t *testing.T) {
 		PinnedVersion: "1.2.3",
 		Org:           "bar",
 		Repo:          "foo",
-		ReleaseName:   "{{ .Version }}",
-		FileName: map[string]string{
+		releaseName:   "{{ .Version }}",
+		fileName: map[string]string{
 			"linux,arm64": "foo",
 		},
 	}
@@ -27,7 +27,7 @@ func TestGetAssetFileName(t *testing.T) {
 
 	t.Run("AllVariables", func(t *testing.T) {
 		binary := base
-		binary.FileName = map[string]string{
+		binary.fileName = map[string]string{
 			"linux,arm64": "foo-{{ .Version }}",
 		}
 
@@ -39,7 +39,7 @@ func TestGetAssetFileName(t *testing.T) {
 
 	t.Run("InvalidFileNameTemplate", func(t *testing.T) {
 		binary := base
-		binary.FileName = map[string]string{
+		binary.fileName = map[string]string{
 			"linux,arm64": "foo-{{ .Version",
 		}
 
@@ -50,7 +50,7 @@ func TestGetAssetFileName(t *testing.T) {
 
 	t.Run("InvalidVariable", func(t *testing.T) {
 		binary := base
-		binary.FileName = map[string]string{
+		binary.fileName = map[string]string{
 			"linux,arm64": "foo-{{ .DoesNotExist }}",
 		}
 
@@ -66,8 +66,8 @@ func TestGetReleaseName(t *testing.T) {
 		PinnedVersion: "1.2.3",
 		Org:           "bar",
 		Repo:          "foo",
-		ReleaseName:   "{{ .Version }}",
-		FileName: map[string]string{
+		releaseName:   "{{ .Version }}",
+		fileName: map[string]string{
 			"linux,arm64": "foo",
 		},
 	}
@@ -81,7 +81,7 @@ func TestGetReleaseName(t *testing.T) {
 
 	t.Run("InvalidReleaseNameTemplate", func(t *testing.T) {
 		binary := base
-		binary.ReleaseName = "v{{ .Version"
+		binary.releaseName = "v{{ .Version"
 
 		_, err := binary.GetReleaseName()
 
@@ -90,7 +90,7 @@ func TestGetReleaseName(t *testing.T) {
 
 	t.Run("InvalidVariable", func(t *testing.T) {
 		binary := base
-		binary.ReleaseName = "v-{{ .DoesNotExist }}"
+		binary.releaseName = "v-{{ .DoesNotExist }}"
 
 		_, err := binary.GetReleaseName()
 
@@ -104,8 +104,8 @@ func TestBinaryShouldReplace(t *testing.T) {
 		PinnedVersion: "1.2.3",
 		Org:           "bar",
 		Repo:          "foo",
-		ReleaseName:   "{{ .Version }}",
-		FileName: map[string]string{
+		releaseName:   "{{ .Version }}",
+		fileName: map[string]string{
 			"linux,arm64": "foo",
 		},
 	}

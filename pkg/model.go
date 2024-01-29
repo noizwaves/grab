@@ -15,11 +15,13 @@ type Binary struct {
 	// source
 	Org  string
 	Repo string
-	// release name template
-	ReleaseName  string
+
+	// Release Name template
+	releaseName  string
 	ReleaseRegex *regexp.Regexp
+
 	// (platform,arch) -> filename template
-	FileName map[string]string
+	fileName map[string]string
 
 	// program related fields
 	VersionArgs  []string
@@ -43,9 +45,9 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 		// package
 		Org:          config.Spec.GitHubRelease.Org,
 		Repo:         config.Spec.GitHubRelease.Repo,
-		ReleaseName:  config.Spec.GitHubRelease.Name,
+		releaseName:  config.Spec.GitHubRelease.Name,
 		ReleaseRegex: releaseRegex,
-		FileName:     config.Spec.GitHubRelease.FileName,
+		fileName:     config.Spec.GitHubRelease.FileName,
 		// program
 		VersionArgs:  config.Spec.Program.VersionArgs,
 		VersionRegex: versionRegex,
@@ -54,7 +56,7 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 
 func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	key := platform + "," + arch
-	fileNameTmplStr, ok := b.FileName[key]
+	fileNameTmplStr, ok := b.fileName[key]
 	if !ok {
 		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
 	}
@@ -76,7 +78,7 @@ func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 }
 
 func (b *Binary) GetReleaseName() (string, error) {
-	tmpl, err := template.New("releaseName:" + b.Name).Parse(b.ReleaseName)
+	tmpl, err := template.New("releaseName:" + b.Name).Parse(b.releaseName)
 	if err != nil {
 		return "", fmt.Errorf("error parsing release name template: %w", err)
 	}
