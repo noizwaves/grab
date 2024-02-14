@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -85,6 +86,8 @@ func (g *ClientImpl) GetLatestRelease(org, repo string) (*Release, error) {
 func (g *ClientImpl) DownloadReleaseAsset(org, repo, release, asset string) ([]byte, error) {
 	url := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
 		org, repo, release, asset)
+
+	slog.Debug("Downloading asset from GitHub", "url", url)
 
 	return downloadArtifact(url)
 }
