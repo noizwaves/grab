@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"path"
+
+	"github.com/ulikunitz/xz"
 )
 
 func unTgzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
@@ -18,38 +20,7 @@ func unTgzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 		return nil, fmt.Errorf("error decompressing Gzipped data: %w", err)
 	}
 
-	tarReader := tar.NewReader(decompressed)
-
-	for {
-		header, err := tarReader.Next()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("error extracting from tar: %w", err)
-		}
-
-		if header.Typeflag == tar.TypeReg {
-			_, archivedName := path.Split(header.Name)
-			if archivedName != binaryName {
-				slog.Debug("Skipping inner file on name mismatch", "innerName", header.Name)
-
-				continue
-			}
-
-			slog.Info("Found file in tgz", "path", header.Name)
-			outData, err := io.ReadAll(tarReader)
-			if err != nil {
-				return nil, fmt.Errorf("error extracting file from tar: %w", err)
-			}
-
-			return outData, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no file named %q found in archive", binaryName)
+	return unTar(binaryName, decompressed) //golint:nowrap
 }
 
 func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
@@ -90,6 +61,17 @@ func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 	return nil, fmt.Errorf("no file named %q found in archive", binaryName)
 }
 
+func unTarxzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
+	slog.Info("Extracting file from xz archive", "name", binaryName)
+
+	decompressed, err := xz.NewReader(data)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing xz data: %w", err)
+	}
+
+	return unTar(binaryName, decompressed) //golint:nowrap
+}
+
 func unGzip(data io.Reader) ([]byte, error) {
 	slog.Info("Extracting contents of gz archive")
 	decompressed, err := gzip.NewReader(data)
@@ -103,4 +85,39 @@ func unGzip(data io.Reader) ([]byte, error) {
 	}
 
 	return outData, nil
+}
+
+func unTar(binaryName string, data io.Reader) ([]byte, error) {
+	tarReader := tar.NewReader(data)
+
+	for {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("error extracting from tar: %w", err)
+		}
+
+		if header.Typeflag == tar.TypeReg {
+			_, archivedName := path.Split(header.Name)
+			if archivedName != binaryName {
+				slog.Debug("Skipping inner file on name mismatch", "innerName", header.Name)
+
+				continue
+			}
+
+			slog.Info("Found file in tar", "path", header.Name)
+			outData, err := io.ReadAll(tarReader)
+			if err != nil {
+				return nil, fmt.Errorf("error extracting file from tar: %w", err)
+			}
+
+			return outData, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no file named %q found in archive", binaryName)
 }

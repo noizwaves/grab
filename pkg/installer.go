@@ -90,6 +90,13 @@ func extractExecutable(binary, asset string, data *[]byte) ([]byte, error) {
 		}
 
 		return executable, nil
+	case strings.HasSuffix(asset, ".tar.xz"):
+		executable, err := unTarxzFileNamed(binary, bytes.NewBuffer(*data))
+		if err != nil {
+			return nil, fmt.Errorf("error extracting binary from xz archive: %w", err)
+		}
+
+		return executable, nil
 	case strings.HasSuffix(asset, ".gz"):
 		executable, err := unGzip(bytes.NewBuffer(*data))
 		if err != nil {
