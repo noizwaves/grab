@@ -130,3 +130,52 @@ func TestUnGzipInvalid(t *testing.T) {
 
 	assert.ErrorContains(t, err, "error decompressing Gzipped data")
 }
+
+func TestUnTarxzValid(t *testing.T) {
+	for _, testCase := range []struct {
+		Name           string
+		BinaryName     string
+		ExpectedErr    string
+		ExpectedResult string
+	}{
+		{
+			Name:           "Matches",
+			BinaryName:     "binary",
+			ExpectedResult: "foobar\n",
+		},
+		{
+			Name:        "Different",
+			BinaryName:  "other",
+			ExpectedErr: "no file named \"other\" found in archive",
+		},
+	} {
+		t.Run(testCase.Name, func(t *testing.T) {
+			file, err := os.Open("testdata/archives/binary.tar.xz")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer file.Close()
+
+			result, err := unTarxzFileNamed(testCase.BinaryName, file)
+
+			if testCase.ExpectedResult != "" {
+				assert.NoError(t, err)
+				assert.Equal(t, []byte(testCase.ExpectedResult), result)
+			} else {
+				assert.ErrorContains(t, err, testCase.ExpectedErr)
+			}
+		})
+	}
+}
+
+func TestUnTarxzInvalid(t *testing.T) {
+	file, err := os.Open("testdata/archives/binary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+
+	_, err = unTarxzFileNamed("binary", file)
+
+	assert.ErrorContains(t, err, "error decompressing xz data")
+}
