@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-if type grab 2>/dev/null; then
+if type grab &>/dev/null; then
   echo "grab already on path, skipping installation"
   exit 0
 fi
