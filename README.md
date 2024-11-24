@@ -2,6 +2,18 @@
 
 A fast, sudo-less package manager for your terminal programs. Downloads directly from GitHub. Supports macOS, Linux, and containers.
 
+## Installation
+
+Install the latest published version:
+```
+bash <(curl --silent https://raw.githubusercontent.com/noizwaves/grab/main/install.sh)>
+```
+
+Or install from source:
+```
+go build -o ~/.local/bin/grab main.go
+```
+
 ## Usage
 
 1. Add a package to the local repository. For example, `~/.grab/repository/fzf.yml`:
