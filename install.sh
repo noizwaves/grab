@@ -50,7 +50,7 @@ mkdir -p $(dirname "$DESTINATION")
 echo "Downloading latest version of grab..."
 GRAB_ARCH=get_arch
 GRAB_PLATFORM=get_platform
-SOURCE="https://github.com/noizwaves/grab/releases/download/latest/grab-$(get_platform)-$(get_arch)"
+SOURCE="https://github.com/noizwaves/grab/releases/latest/download/grab-$(get_platform)-$(get_arch)"
 curl -L --output "$DESTINATION" --silent "$SOURCE"
 chmod +x "$DESTINATION"
 
