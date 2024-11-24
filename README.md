@@ -27,11 +27,11 @@ go build -o ~/.local/bin/grab main.go
       gitHubRelease:
         org: junegunn
         repo: fzf
-        name: "{{ .Version }}"
+        name: "v{{ .Version }}"
         versionRegex: \d+\.\d+\.\d+
         fileName:
-          darwin,amd64: fzf-{{ .Version }}-darwin_amd64.zip
-          darwin,arm64: fzf-{{ .Version }}-darwin_arm64.zip
+          darwin,amd64: fzf-{{ .Version }}-darwin_amd64.tar.gz
+          darwin,arm64: fzf-{{ .Version }}-darwin_arm64.tar.gz
           linux,amd64: fzf-{{ .Version }}-linux_amd64.tar.gz
           linux,arm64: fzf-{{ .Version }}-linux_arm64.tar.gz
       program:
