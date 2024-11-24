@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-yes | goenv install --skip-existing
+mise install
 
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 

@@ -62,6 +62,6 @@ packages:
 
 ## Development
 
-1. Install `goenv`
-1. Run `./setup.sh`
-1. Generate a GitHub token and set it as the `GH_TOKEN` environment variable
+1.  [Install Mise](https://mise.jdx.dev/installing-mise.html)
+1.  Run `./setup.sh`
+1.  Generate a GitHub token and set it as the `GH_TOKEN` environment variable
