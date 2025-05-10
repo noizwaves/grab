@@ -14,9 +14,8 @@ if [ -f "$DESTINATION" ]; then
 fi
 
 function get_arch() {
-  # `arch` doesn't exist in cachyos
-  # `uname -i` returns unknown on cachyos
-  local arch=`uname --machine`
+  # --machine, because macOS only supports -m
+  local arch=`uname -m`
   case "$arch" in
     x86_64)
       echo "amd64"
