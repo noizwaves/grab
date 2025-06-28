@@ -134,22 +134,21 @@ func getCurrentVersion(destPath string, binary *Binary) (string, error) {
 }
 
 // Write the executable to disk as atomically as possible.
-// First, it writes to a temporary file, then it moves the temporary file to the destination path.
+// First, it writes to a temporary file in the destination directory,
+// then it moves the temporary file to the destination path.
 func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
-	tempDir, err := os.MkdirTemp("", "grab-installer-temp")
-	if err != nil {
-		return fmt.Errorf("error creating temp dir: %w", err)
-	}
-
-	tempPath := path.Join(tempDir, binary.Name)
+	// Use dest instead of /tmp for temporary file writing; avoids the
+	// "invalid cross-device link" error when /tmp is on a different device
+	// i.e. memory mounted
+	destDir := path.Dir(destPath)
+	tempPath := path.Join(destDir, ".grab-temp-"+binary.Name)
 	slog.Debug("Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
 
-	//nolint:gosec,gomnd
-	err = os.WriteFile(tempPath, *data, 0o755)
+	//nolint:gosec,mnd
+	err := os.WriteFile(tempPath, *data, 0o755)
 	if err != nil {
 		return fmt.Errorf("error writing executable to temp location: %w", err)
 	}
-	defer tryRemoveFromFilesystem(tempPath)
 
 	err = os.Rename(tempPath, destPath)
 	if err != nil {
@@ -157,13 +156,4 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	}
 
 	return nil
-}
-
-// Try to remove a file or directory from filesystem, and warn on an error.
-func tryRemoveFromFilesystem(path string) {
-	if _, err := os.Stat(path); err == nil {
-		if err := os.Remove(path); err != nil {
-			slog.Warn("Failed to remove file", "path", path)
-		}
-	}
 }
