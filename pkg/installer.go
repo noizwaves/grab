@@ -150,7 +150,7 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 		return fmt.Errorf("error removing temp file: %w", err)
 	}
 
-	//nolint:gosec,mnd
+	//nolint:gosec,gomnd
 	err = os.WriteFile(tempPath, *data, 0o755)
 	if err != nil {
 		return fmt.Errorf("error writing executable to temp location: %w", err)
