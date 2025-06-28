@@ -144,15 +144,43 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	tempPath := path.Join(destDir, ".grab-temp-"+binary.Name)
 	slog.Debug("Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
 
+	// Ensure temp path is clear
+	err := removeFileIfPresent(tempPath)
+	if err != nil {
+		return fmt.Errorf("error removing temp file: %w", err)
+	}
+
 	//nolint:gosec,mnd
-	err := os.WriteFile(tempPath, *data, 0o755)
+	err = os.WriteFile(tempPath, *data, 0o755)
 	if err != nil {
 		return fmt.Errorf("error writing executable to temp location: %w", err)
 	}
 
+	// Best-effort clean up if rename fails
+	defer tryRemoveFromFilesystem(tempPath)
+
 	err = os.Rename(tempPath, destPath)
 	if err != nil {
 		return fmt.Errorf("error moving temp to destination: %w", err)
+	}
+
+	return nil
+}
+
+// Best effort to remove a file or directory from filesystem, and warn on an error.
+func tryRemoveFromFilesystem(path string) {
+	if _, err := os.Stat(path); err == nil {
+		if err := os.Remove(path); err != nil {
+			slog.Warn("Failed to remove file", "path", path)
+		}
+	}
+}
+
+func removeFileIfPresent(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		if err := os.Remove(path); err != nil {
+			return fmt.Errorf("error removing file '%s': %w", path, err)
+		}
 	}
 
 	return nil
