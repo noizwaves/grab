@@ -13,12 +13,14 @@ func makeEmptyConfig(t *testing.T) string {
 	t.Helper()
 
 	dir := t.TempDir()
+
 	err := os.MkdirAll(path.Join(dir, ".grab", "repository"), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emptyConfig := []byte(`packages: {}`)
+
 	err = os.WriteFile(path.Join(dir, ".grab", "config.yml"), emptyConfig, 0o644) //nolint:gosec
 	if err != nil {
 		t.Fatal(err)

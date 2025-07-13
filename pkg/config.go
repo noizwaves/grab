@@ -51,6 +51,7 @@ type configProgram struct {
 
 func loadConfig(path string) (*configRoot, error) {
 	slog.Info("Loading config file from disk", "path", path)
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
@@ -61,8 +62,8 @@ func loadConfig(path string) (*configRoot, error) {
 	output := configRoot{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
-	err = decoder.Decode(&output)
 
+	err = decoder.Decode(&output)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing config YAML: %w", err)
 	}
@@ -72,13 +73,17 @@ func loadConfig(path string) (*configRoot, error) {
 
 func saveConfig(config *configRoot, path string) error {
 	slog.Info("Saving config file to disk", "path", path)
+
 	var buf bytes.Buffer
+
 	yamlEncoder := yaml.NewEncoder(&buf)
-	yamlEncoder.SetIndent(2) //nolint:gomnd
+	yamlEncoder.SetIndent(2) //nolint:mnd
+
 	err := yamlEncoder.Encode(config)
 	if err != nil {
 		return fmt.Errorf("error serializing config: %w", err)
 	}
+
 	data := buf.Bytes()
 
 	slog.Debug("Writing config to disk", "content", string(data))
@@ -99,6 +104,7 @@ func saveConfig(config *configRoot, path string) error {
 
 func loadPackage(path string) (*configPackage, error) {
 	slog.Info("Loading package config from disk", "path", path)
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading package file: %w", err)
@@ -109,6 +115,7 @@ func loadPackage(path string) (*configPackage, error) {
 	output := configPackage{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
+
 	err = decoder.Decode(&output)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing package YAML: %w", err)
@@ -119,6 +126,7 @@ func loadPackage(path string) (*configPackage, error) {
 
 func loadRepository(repoPath string) (*repository, error) {
 	slog.Info("Loading packages from repository on disk", "repoPath", repoPath)
+
 	packages := []*configPackage{}
 
 	err := filepath.Walk(repoPath, func(path string, info fs.FileInfo, err error) error {

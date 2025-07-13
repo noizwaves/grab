@@ -42,18 +42,21 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 	}
 
 	configFilePath := path.Join(configPath, configFileName)
+
 	config, err := loadConfig(configFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
 	repoPath := path.Join(configPath, repositoryDirName)
+
 	repository, err := loadRepository(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading repository: %w", err)
 	}
 
 	binaries := make([]*Binary, 0)
+
 	for name, version := range config.Packages {
 		located, err := locatePackage(repository, name)
 		if err != nil {
@@ -79,7 +82,7 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 }
 
 func (c *Context) EnsureBinPathExists() error {
-	err := os.MkdirAll(c.BinPath, 0o755) //nolint:gomnd
+	err := os.MkdirAll(c.BinPath, 0o755) //nolint:mnd
 	if err != nil {
 		return fmt.Errorf("error creating bin path directory: %w", err)
 	}
@@ -98,6 +101,7 @@ func getPackageNames(repository *repository) []string {
 
 func locatePackage(repository *repository, name string) (*configPackage, error) {
 	slog.Debug("Looking for configured package in repository", "name", name)
+
 	idx := slices.IndexFunc(repository.Packages, func(p *configPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
 		slog.Error("Package missing from repository", "name", name)
@@ -119,10 +123,12 @@ func getConfigDirPath(override string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("error determining home directory: %w", err)
 		}
+
 		configDirPath = path.Join(homeDir, defaultConfigDirPath)
 	}
 
-	if _, err := os.Stat(configDirPath); os.IsNotExist(err) {
+	_, err := os.Stat(configDirPath)
+	if os.IsNotExist(err) {
 		return "", fmt.Errorf("config directory does not exist: %w", err)
 	}
 
@@ -138,6 +144,7 @@ func getBinPath(override string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error determining home directory: %w", err)
 	}
+
 	binPath := path.Join(homeDir, defaultBinPath)
 
 	return binPath, nil

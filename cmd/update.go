@@ -14,11 +14,11 @@ func makeUpdateCommand() *cobra.Command {
 		Use:          "update",
 		Short:        "Updates packages to use latest remote version",
 		SilenceUsage: true,
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRun: func(_ *cobra.Command, _ []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			context, err := newContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)

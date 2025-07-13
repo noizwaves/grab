@@ -16,6 +16,7 @@ func (u *Updater) Update(context *Context, out io.Writer) error {
 	slog.Info("Updating configured packages")
 
 	dirty := false
+
 	for _, binary := range context.Binaries {
 		latestRelease, err := u.GitHubClient.GetLatestRelease(binary.Org, binary.Repo)
 		if err != nil {
@@ -31,7 +32,9 @@ func (u *Updater) Update(context *Context, out io.Writer) error {
 			fmt.Fprintf(out, "%s: %s is latest\n", binary.Name, binary.PinnedVersion)
 		} else {
 			fmt.Fprintf(out, "%s: %s -> %s (%s)\n", binary.Name, binary.PinnedVersion, latestVersion, latestRelease.URL)
+
 			dirty = true
+
 			setBinaryVersion(context.Config, binary.Name, latestVersion)
 		}
 	}

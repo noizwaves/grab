@@ -71,6 +71,7 @@ Supports macOS, Linux, and containers.
 
 func Execute() {
 	rootCmd := makeRootCommand()
+
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

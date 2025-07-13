@@ -12,13 +12,13 @@ func CommandSucceeds(t *testing.T, path string) {
 	t.Helper()
 
 	cmd := exec.Command(path)
+
 	err := cmd.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = cmd.Wait()
-
 	if err != nil {
 		assert.Fail(t, "command did not run successfully", err)
 	}

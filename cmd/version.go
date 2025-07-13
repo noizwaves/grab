@@ -13,7 +13,7 @@ func makeVersionCommand() *cobra.Command {
 		Use:          "version",
 		Short:        "Print grab version",
 		SilenceUsage: true,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println(version)
 		},
 	}
