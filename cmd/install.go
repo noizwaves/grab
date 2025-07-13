@@ -14,11 +14,11 @@ func makeInstallCommand() *cobra.Command {
 		Use:          "install",
 		Short:        "Install missing dependencies",
 		SilenceUsage: true,
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRun: func(_ *cobra.Command, _ []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			context, err := newContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)

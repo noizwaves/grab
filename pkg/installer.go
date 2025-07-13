@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -28,7 +29,8 @@ func (i *Installer) Install(context *Context, out io.Writer) error {
 	for _, binary := range context.Binaries {
 		destPath := path.Join(context.BinPath, binary.Name)
 		// if destination file exists
-		if _, err := os.Stat(destPath); err == nil {
+		_, err := os.Stat(destPath)
+		if err == nil {
 			currentVersion, err := getCurrentVersion(destPath, binary)
 			if err != nil {
 				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
@@ -50,7 +52,8 @@ func (i *Installer) Install(context *Context, out io.Writer) error {
 			return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
 		}
 
-		if err := writeToDisk(binary, &data, destPath); err != nil {
+		err = writeToDisk(binary, &data, destPath)
+		if err != nil {
 			return err
 		}
 
@@ -127,7 +130,7 @@ func getCurrentVersion(destPath string, binary *Binary) (string, error) {
 
 	matches := binary.VersionRegex.FindStringSubmatch(string(out))
 	if len(matches) == 0 {
-		return "", fmt.Errorf("version regex did not match command output")
+		return "", errors.New("version regex did not match command output")
 	}
 
 	return matches[0], nil
@@ -150,7 +153,7 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 		return fmt.Errorf("error removing temp file: %w", err)
 	}
 
-	//nolint:gosec,gomnd
+	//nolint:gosec,mnd
 	err = os.WriteFile(tempPath, *data, 0o755)
 	if err != nil {
 		return fmt.Errorf("error writing executable to temp location: %w", err)
@@ -169,16 +172,20 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 
 // Best effort to remove a file or directory from filesystem, and warn on an error.
 func tryRemoveFromFilesystem(path string) {
-	if _, err := os.Stat(path); err == nil {
-		if err := os.Remove(path); err != nil {
+	_, err := os.Stat(path)
+	if err == nil {
+		err := os.Remove(path)
+		if err != nil {
 			slog.Warn("Failed to remove file", "path", path)
 		}
 	}
 }
 
 func removeFileIfPresent(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		if err := os.Remove(path); err != nil {
+	_, err := os.Stat(path)
+	if err == nil {
+		err := os.Remove(path)
+		if err != nil {
 			return fmt.Errorf("error removing file '%s': %w", path, err)
 		}
 	}

@@ -56,6 +56,7 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 
 func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	key := platform + "," + arch
+
 	fileNameTmplStr, ok := b.fileName[key]
 	if !ok {
 		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
@@ -69,6 +70,7 @@ func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	vm := newURLViewModel(b)
 
 	var output bytes.Buffer
+
 	err = tmpl.Execute(&output, vm)
 	if err != nil {
 		return "", fmt.Errorf("error rendering asset filename template: %w", err)
@@ -86,6 +88,7 @@ func (b *Binary) GetReleaseName() (string, error) {
 	vm := newURLViewModel(b)
 
 	var output bytes.Buffer
+
 	err = tmpl.Execute(&output, vm)
 	if err != nil {
 		return "", fmt.Errorf("error rendering release name template: %w", err)

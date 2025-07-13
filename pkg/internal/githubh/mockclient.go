@@ -1,7 +1,7 @@
 package githubh
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/noizwaves/grab/pkg/github"
 )
@@ -13,7 +13,7 @@ type MockGitHubClient struct {
 
 func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, _ string) ([]byte, error) {
 	if len(m.AssetData) == 0 {
-		return nil, fmt.Errorf("not implemented")
+		return nil, errors.New("not implemented")
 	}
 
 	return m.AssetData, nil
@@ -21,7 +21,7 @@ func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, _ string) ([]byte, erro
 
 func (m *MockGitHubClient) GetLatestRelease(_, _ string) (*github.Release, error) {
 	if m.Release == nil {
-		return nil, fmt.Errorf("not implemented")
+		return nil, errors.New("not implemented")
 	}
 
 	return m.Release, nil

@@ -16,6 +16,7 @@ type errorBody struct {
 
 func parseRelease(data []byte) (*Release, error) {
 	var output Release
+
 	err := json.Unmarshal(data, &output)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response as JSON: %w", err)
@@ -24,14 +25,15 @@ func parseRelease(data []byte) (*Release, error) {
 	return &output, nil
 }
 
-func parseError(data []byte) (*Release, error) {
+func parseError(data []byte) error {
 	var output errorBody
+
 	err := json.Unmarshal(data, &output)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing error response as JSON: %w", err)
+		return fmt.Errorf("error parsing error response as JSON: %w", err)
 	}
 
-	return nil, fmt.Errorf(output.Message)
+	return fmt.Errorf("%s", output.Message)
 }
 
 func GetLatestRelease(org, repo string) (*Release, error) {
@@ -43,7 +45,7 @@ func GetLatestRelease(org, repo string) (*Release, error) {
 	}
 
 	req.Header.Add("Accept", "application/vnd.github+json")
-	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Add("X-Github-Api-Version", "2022-11-28")
 
 	if token := os.Getenv("GH_TOKEN"); token != "" {
 		req.Header.Add("Authorization", "Bearer "+token)
@@ -64,7 +66,7 @@ func GetLatestRelease(org, repo string) (*Release, error) {
 	case http.StatusOK:
 		return parseRelease(data)
 	default:
-		return parseError(data)
+		return nil, parseError(data)
 	}
 }
 

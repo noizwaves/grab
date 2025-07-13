@@ -15,6 +15,7 @@ import (
 
 func unTgzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 	slog.Info("Extracting file from tgz archive", "name", binaryName)
+
 	decompressed, err := gzip.NewReader(data)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing Gzipped data: %w", err)
@@ -25,6 +26,7 @@ func unTgzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 
 func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 	slog.Info("Extracting file from zip archive", "name", binaryName)
+
 	raw, err := io.ReadAll(data)
 	if err != nil {
 		return nil, fmt.Errorf("error reading raw Zip file: %w", err)
@@ -45,6 +47,7 @@ func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 		}
 
 		slog.Info("Found file in zip", "path", entry.Name)
+
 		fileReader, err := entry.Open()
 		if err != nil {
 			return nil, fmt.Errorf("error reading %q from Zip file: %w", binaryName, err)
@@ -74,6 +77,7 @@ func unTarxzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 
 func unGzip(data io.Reader) ([]byte, error) {
 	slog.Info("Extracting contents of gz archive")
+
 	decompressed, err := gzip.NewReader(data)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing Gzipped data: %w", err)
@@ -92,7 +96,6 @@ func unTar(binaryName string, data io.Reader) ([]byte, error) {
 
 	for {
 		header, err := tarReader.Next()
-
 		if err == io.EOF {
 			break
 		}
@@ -110,6 +113,7 @@ func unTar(binaryName string, data io.Reader) ([]byte, error) {
 			}
 
 			slog.Info("Found file in tar", "path", header.Name)
+
 			outData, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, fmt.Errorf("error extracting file from tar: %w", err)
