@@ -12,7 +12,7 @@ jobs:
       - name: Golang
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21.6
+          go-version: 1.24.5
       - name: Compile
         run: go build -o tmp/grab main.go
       - name: Test
