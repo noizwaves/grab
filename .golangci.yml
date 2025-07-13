@@ -1,27 +1,37 @@
-# https://golangci-lint.run/usage/configuration/
+version: "2"
 run:
   allow-parallel-runners: true
-
 linters:
-  enable-all: true
+  default: all
   disable:
     - depguard
-    - forbidigo
-    - goerr113
-    - paralleltest
-    - wsl
+    - err113
     - exhaustruct
-    - testpackage # allow testing private methods
-    - testifylint # follow on this one
-
-    # deprecated
-    - nosnakecase
-    - maligned
-    - structcheck
-    - ifshort
-    - deadcode
-    - varcheck
-    - interfacer
-    - exhaustivestruct
-    - golint
-    - scopelint
+    - forbidigo
+    - paralleltest
+    - testifylint
+    - testpackage
+    - wsl
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
