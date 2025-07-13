@@ -31,7 +31,7 @@ func parseError(data []byte) (*Release, error) {
 		return nil, fmt.Errorf("error parsing error response as JSON: %w", err)
 	}
 
-	return nil, fmt.Errorf(output.Message)
+	return nil, fmt.Errorf("%s", output.Message)
 }
 
 func GetLatestRelease(org, repo string) (*Release, error) {
