@@ -37,11 +37,12 @@ type configPackageSpec struct {
 }
 
 type configGitHubRelease struct {
-	Org          string            `yaml:"org"`
-	Repo         string            `yaml:"repo"`
-	Name         string            `yaml:"name"`
-	VersionRegex string            `yaml:"versionRegex"`
-	FileName     map[string]string `yaml:"fileName"`
+	Org                string            `yaml:"org"`
+	Repo               string            `yaml:"repo"`
+	Name               string            `yaml:"name"`
+	VersionRegex       string            `yaml:"versionRegex"`
+	FileName           map[string]string `yaml:"fileName"`
+	EmbeddedBinaryPath map[string]string `yaml:"embeddedBinaryPath"`
 }
 
 type configProgram struct {

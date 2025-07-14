@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"path"
 
 	"github.com/ulikunitz/xz"
 )
@@ -105,8 +104,7 @@ func unTar(binaryName string, data io.Reader) ([]byte, error) {
 		}
 
 		if header.Typeflag == tar.TypeReg {
-			_, archivedName := path.Split(header.Name)
-			if archivedName != binaryName {
+			if header.Name != binaryName {
 				slog.Debug("Skipping inner file on name mismatch", "innerName", header.Name)
 
 				continue
