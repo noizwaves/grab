@@ -12,19 +12,19 @@ import (
 	"github.com/ulikunitz/xz"
 )
 
-func unTgzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
-	slog.Info("Extracting file from tgz archive", "name", binaryName)
+func unTgzFileNamed(binaryPath string, data io.Reader) ([]byte, error) {
+	slog.Info("Extracting file from tgz archive", "path", binaryPath)
 
 	decompressed, err := gzip.NewReader(data)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing Gzipped data: %w", err)
 	}
 
-	return unTar(binaryName, decompressed) //golint:nowrap
+	return unTar(binaryPath, decompressed) //golint:nowrap
 }
 
-func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
-	slog.Info("Extracting file from zip archive", "name", binaryName)
+func unZipFileNamed(binaryPath string, data io.Reader) ([]byte, error) {
+	slog.Info("Extracting file from zip archive", "path", binaryPath)
 
 	raw, err := io.ReadAll(data)
 	if err != nil {
@@ -39,8 +39,8 @@ func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 	}
 
 	for _, entry := range decompressed.File {
-		if entry.Name != binaryName {
-			slog.Debug("Skipping inner file on name mismatch", "innerName", entry.Name)
+		if entry.Name != binaryPath {
+			slog.Debug("Skipping inner file on path mismatch", "innerName", entry.Name)
 
 			continue
 		}
@@ -49,29 +49,29 @@ func unZipFileNamed(binaryName string, data io.Reader) ([]byte, error) {
 
 		fileReader, err := entry.Open()
 		if err != nil {
-			return nil, fmt.Errorf("error reading %q from Zip file: %w", binaryName, err)
+			return nil, fmt.Errorf("error reading %q from Zip file: %w", binaryPath, err)
 		}
 
 		outData, err := io.ReadAll(fileReader)
 		if err != nil {
-			return nil, fmt.Errorf("error reading %q from Zip file: %w", binaryName, err)
+			return nil, fmt.Errorf("error reading %q from Zip file: %w", binaryPath, err)
 		}
 
 		return outData, nil
 	}
 
-	return nil, fmt.Errorf("no file named %q found in archive", binaryName)
+	return nil, fmt.Errorf("no file named %q found in archive", binaryPath)
 }
 
-func unTarxzFileNamed(binaryName string, data io.Reader) ([]byte, error) {
-	slog.Info("Extracting file from xz archive", "name", binaryName)
+func unTarxzFileNamed(binaryPath string, data io.Reader) ([]byte, error) {
+	slog.Info("Extracting file from xz archive", "path", binaryPath)
 
 	decompressed, err := xz.NewReader(data)
 	if err != nil {
 		return nil, fmt.Errorf("error decompressing xz data: %w", err)
 	}
 
-	return unTar(binaryName, decompressed) //golint:nowrap
+	return unTar(binaryPath, decompressed) //golint:nowrap
 }
 
 func unGzip(data io.Reader) ([]byte, error) {
@@ -90,7 +90,7 @@ func unGzip(data io.Reader) ([]byte, error) {
 	return outData, nil
 }
 
-func unTar(binaryName string, data io.Reader) ([]byte, error) {
+func unTar(binaryPath string, data io.Reader) ([]byte, error) {
 	tarReader := tar.NewReader(data)
 
 	for {
@@ -104,8 +104,8 @@ func unTar(binaryName string, data io.Reader) ([]byte, error) {
 		}
 
 		if header.Typeflag == tar.TypeReg {
-			if header.Name != binaryName {
-				slog.Debug("Skipping inner file on name mismatch", "innerName", header.Name)
+			if header.Name != binaryPath {
+				slog.Debug("Skipping inner file on path mismatch", "innerName", header.Name)
 
 				continue
 			}
@@ -121,5 +121,5 @@ func unTar(binaryName string, data io.Reader) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no file named %q found in archive", binaryName)
+	return nil, fmt.Errorf("no file named %q found in archive", binaryPath)
 }
