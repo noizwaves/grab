@@ -98,6 +98,48 @@ func TestGetReleaseName(t *testing.T) {
 	})
 }
 
+func TestGetEmbeddedBinaryPath(t *testing.T) {
+	base := Binary{
+		Name:          "foo",
+		PinnedVersion: "1.2.3",
+		Org:           "bar",
+		Repo:          "foo",
+		releaseName:   "{{ .Version }}",
+		fileName: map[string]string{
+			"linux,arm64": "{{ .Version }}",
+		},
+	}
+
+	t.Run("DefaultsToPackageName", func(t *testing.T) {
+		result, err := base.GetEmbeddedBinaryPath("linux", "arm64")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "foo", result)
+	})
+
+	t.Run("MatchingEmbeddedBinaryPath", func(t *testing.T) {
+		binary := base
+		binary.embeddedBinaryPath = map[string]string{
+			"linux,arm64": "linux-arm64/foo",
+		}
+
+		result, err := binary.GetEmbeddedBinaryPath("linux", "arm64")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "linux-arm64/foo", result)
+	})
+
+	t.Run("MissingEmbeddedBinaryPath", func(t *testing.T) {
+		binary := base
+		binary.embeddedBinaryPath = map[string]string{}
+
+		result, err := binary.GetEmbeddedBinaryPath("linux", "amd64")
+
+		assert.Equal(t, "", result)
+		assert.ErrorContains(t, err, "missing value for platform=linux,arch=amd64")
+	})
+}
+
 func TestBinaryShouldReplace(t *testing.T) {
 	base := Binary{
 		Name:          "foo",

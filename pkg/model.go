@@ -83,16 +83,21 @@ func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	return output.String(), nil
 }
 
-func (b *Binary) GetEmbeddedBinaryPath(platform, arch string) string {
-	key := platform + "," + arch
-
-	embeddedBinaryPath, ok := b.embeddedBinaryPath[key]
-	if !ok {
-		// Fall back to binary name for backward compatibility
-		return b.Name
+func (b *Binary) GetEmbeddedBinaryPath(platform, arch string) (string, error) {
+	// Fall back to binary name for backward compatibility
+	if b.embeddedBinaryPath == nil {
+		return b.Name, nil
 	}
 
-	return embeddedBinaryPath
+	key := platform + "," + arch
+	embeddedBinaryPath, ok := b.embeddedBinaryPath[key]
+
+	// A missing key is a hard failure
+	if !ok {
+		return "", fmt.Errorf("missing value for platform=%s,arch=%s", platform, arch)
+	}
+
+	return embeddedBinaryPath, nil
 }
 
 func (b *Binary) GetReleaseName() (string, error) {

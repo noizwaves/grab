@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//nolint:funlen
 func TestLoadRepositoryValid(t *testing.T) {
 	actual, err := loadRepository("testdata/repository/valid")
 
@@ -31,6 +32,7 @@ func TestLoadRepositoryValid(t *testing.T) {
 							"linux,amd64":  "bin",
 							"linux,arm64":  "bin",
 						},
+						EmbeddedBinaryPath: nil,
 					},
 					Program: configProgram{
 						VersionArgs:  []string{"--version"},
@@ -55,6 +57,12 @@ func TestLoadRepositoryValid(t *testing.T) {
 							"darwin,arm64": "v{{ .Version }}-aarch64-apple-darwin.zip",
 							"linux,amd64":  "v{{ .Version }}-x86_64-unknown-linux-musl.tgz",
 							"linux,arm64":  "v{{ .Version }}-aarch64-unknown-linux-gnu.tar.gz",
+						},
+						EmbeddedBinaryPath: map[string]string{
+							"darwin,amd64": "x86_64-apple-darwin/baz",
+							"darwin,arm64": "aarch64-apple-darwin/baz",
+							"linux,amd64":  "x86_64-unknown-linux-musl/baz",
+							"linux,arm64":  "aarch64-unknown-linux-gnu/baz",
 						},
 					},
 					Program: configProgram{
