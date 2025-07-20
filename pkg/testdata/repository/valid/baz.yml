@@ -13,6 +13,11 @@ spec:
       darwin,arm64: v{{ .Version }}-aarch64-apple-darwin.zip
       linux,amd64: v{{ .Version }}-x86_64-unknown-linux-musl.tgz
       linux,arm64: v{{ .Version }}-aarch64-unknown-linux-gnu.tar.gz
+    embeddedBinaryPath:
+      darwin,amd64: x86_64-apple-darwin/baz
+      darwin,arm64: aarch64-apple-darwin/baz
+      linux,amd64: x86_64-unknown-linux-musl/baz
+      linux,arm64: aarch64-unknown-linux-gnu/baz
   program:
     versionArgs: [version]
     versionRegex: \d+\.\d+\.\d+

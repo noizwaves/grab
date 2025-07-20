@@ -23,6 +23,9 @@ type Binary struct {
 	// (platform,arch) -> filename template
 	fileName map[string]string
 
+	// (platform,arch) -> embedded binary path template
+	embeddedBinaryPath map[string]string
+
 	// program related fields
 	VersionArgs  []string
 	VersionRegex *regexp.Regexp
@@ -43,11 +46,12 @@ func NewBinary(name, version string, config configPackage) (*Binary, error) {
 		Name:          name,
 		PinnedVersion: version,
 		// package
-		Org:          config.Spec.GitHubRelease.Org,
-		Repo:         config.Spec.GitHubRelease.Repo,
-		releaseName:  config.Spec.GitHubRelease.Name,
-		ReleaseRegex: releaseRegex,
-		fileName:     config.Spec.GitHubRelease.FileName,
+		Org:                config.Spec.GitHubRelease.Org,
+		Repo:               config.Spec.GitHubRelease.Repo,
+		releaseName:        config.Spec.GitHubRelease.Name,
+		ReleaseRegex:       releaseRegex,
+		fileName:           config.Spec.GitHubRelease.FileName,
+		embeddedBinaryPath: config.Spec.GitHubRelease.EmbeddedBinaryPath,
 		// program
 		VersionArgs:  config.Spec.Program.VersionArgs,
 		VersionRegex: versionRegex,
@@ -77,6 +81,23 @@ func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 	}
 
 	return output.String(), nil
+}
+
+func (b *Binary) GetEmbeddedBinaryPath(platform, arch string) (string, error) {
+	// Fall back to binary name for backward compatibility
+	if b.embeddedBinaryPath == nil {
+		return b.Name, nil
+	}
+
+	key := platform + "," + arch
+	embeddedBinaryPath, ok := b.embeddedBinaryPath[key]
+
+	// A missing key is a hard failure
+	if !ok {
+		return "", fmt.Errorf("missing value for platform=%s,arch=%s", platform, arch)
+	}
+
+	return embeddedBinaryPath, nil
 }
 
 func (b *Binary) GetReleaseName() (string, error) {

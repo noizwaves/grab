@@ -71,6 +71,11 @@ func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) (
 		return nil, fmt.Errorf("error getting asset filename: %w", err)
 	}
 
+	embeddedBinaryPath, err := binary.GetEmbeddedBinaryPath(context.Platform, context.Architecture)
+	if err != nil {
+		return nil, fmt.Errorf("error getting embedded binary path: %w", err)
+	}
+
 	release, err := binary.GetReleaseName()
 	if err != nil {
 		return nil, fmt.Errorf("error getting asset filename: %w", err)
@@ -81,7 +86,7 @@ func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) (
 		return nil, fmt.Errorf("error downloading remote file: %w", err)
 	}
 
-	return extractExecutable(binary.Name, asset, &data)
+	return extractExecutable(embeddedBinaryPath, asset, &data)
 }
 
 func extractExecutable(binary, asset string, data *[]byte) ([]byte, error) {
