@@ -138,8 +138,8 @@ spec:
     fileName:
       darwin,amd64: "yazi-x86_64-apple-darwin.zip"
       darwin,arm64: "yazi-aarch64-apple-darwin.zip"
-      linux,amd64: "yazi-x86_64-unknown-linux-gnu.tar.gz"
-      linux,arm64: "yazi-aarch64-unknown-linux-gnu.tar.gz"
+      linux,amd64: "yazi-x86_64-unknown-linux-gnu.zip"
+      linux,arm64: "yazi-aarch64-unknown-linux-gnu.zip"
     embeddedBinaryPath:
       darwin,amd64: "yazi-x86_64-apple-darwin/yazi"
       darwin,arm64: "yazi-aarch64-apple-darwin/yazi"
