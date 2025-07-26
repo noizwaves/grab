@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Building and Testing
 ```bash
 # Build the application
-go build main.go
+go build -o ./grab main.go
 
 # Run all tests
 go test -count=1 ./...
@@ -114,3 +114,11 @@ Uses Go templates for dynamic URL and filename generation based on:
 - Supports cross-platform builds for macOS and Linux on amd64/arm64
 - Uses semantic version comparison for updates
 - Configuration files use YAML format exclusively
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
+
+## Development Guidelines
+
+- Do not test private functions directly. Instead, call the public functions that use the private functions.

@@ -1,2 +1,5 @@
 /grab
 /.claude/settings.local.json
+
+# OS specific
+.DS_Store
