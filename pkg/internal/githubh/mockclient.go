@@ -9,6 +9,14 @@ import (
 type MockGitHubClient struct {
 	AssetData []byte
 	Release   *github.Release
+
+	// Call tracking
+	GetLatestReleaseCalls []GetLatestReleaseCall
+}
+
+type GetLatestReleaseCall struct {
+	Org  string
+	Repo string
 }
 
 func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, _ string) ([]byte, error) {
@@ -19,7 +27,13 @@ func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, _ string) ([]byte, erro
 	return m.AssetData, nil
 }
 
-func (m *MockGitHubClient) GetLatestRelease(_, _ string) (*github.Release, error) {
+func (m *MockGitHubClient) GetLatestRelease(org, repo string) (*github.Release, error) {
+	// Track the call
+	m.GetLatestReleaseCalls = append(m.GetLatestReleaseCalls, GetLatestReleaseCall{
+		Org:  org,
+		Repo: repo,
+	})
+
 	if m.Release == nil {
 		return nil, errors.New("not implemented")
 	}

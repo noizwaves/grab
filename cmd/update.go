@@ -11,14 +11,15 @@ import (
 
 func makeUpdateCommand() *cobra.Command {
 	updateCmd := &cobra.Command{
-		Use:          "update",
+		Use:          "update [package-name]",
 		Short:        "Updates packages to use latest remote version",
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		PreRun: func(_ *cobra.Command, _ []string) {
 			err := configureLogging()
 			cobra.CheckErr(err)
 		},
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			context, err := newContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
@@ -28,7 +29,12 @@ func makeUpdateCommand() *cobra.Command {
 				GitHubClient: github.NewClient(),
 			}
 
-			err = updater.Update(context, os.Stdout)
+			var packageName string
+			if len(args) > 0 {
+				packageName = args[0]
+			}
+
+			err = updater.Update(context, packageName, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error upgrading: %w", err)
 			}
