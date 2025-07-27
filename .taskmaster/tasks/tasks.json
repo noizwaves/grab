@@ -233,7 +233,7 @@
         "testStrategy": "Unit tests for command creation, argument validation, and URL parsing. Test with valid and invalid URL formats. Verify proper error messages for incorrect argument counts.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -241,7 +241,7 @@
             "description": "Set up the foundation for the import command by creating the command file and implementing the NewImportCommand function with proper Cobra integration",
             "dependencies": [],
             "details": "Create cmd/import.go file following the existing grab command patterns. Implement NewImportCommand() function that returns a *cobra.Command. Set up basic command metadata including Use, Short, Long descriptions, and RunE function. Follow the same structure as other commands in the codebase for consistency.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for command creation and basic structure validation. Verify command metadata is properly set and command can be instantiated without errors."
           },
           {
@@ -252,7 +252,7 @@
               "9.1"
             ],
             "details": "Configure the Cobra command to use cobra.ExactArgs(1) for argument validation. Implement proper error handling for incorrect argument counts. Ensure error messages are user-friendly and consistent with grab's error messaging patterns. Test edge cases like no arguments and multiple arguments.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for argument validation including zero arguments, one argument (valid case), and multiple arguments. Verify proper error messages are returned for invalid argument counts."
           },
           {
@@ -263,7 +263,7 @@
               "9.2"
             ],
             "details": "Implement URL parsing and validation to check if the provided URL follows GitHub release URL patterns (github.com/org/repo/releases/tag/version). Use Go's url package for parsing. Validate URL scheme (https), host (github.com), and path structure. Create helper functions for URL validation that can be reused. Handle edge cases like shortened URLs or different GitHub URL formats.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with valid and invalid URL formats including proper GitHub release URLs, malformed URLs, non-GitHub URLs, and edge cases. Verify appropriate error messages for each validation failure."
           },
           {
@@ -274,7 +274,7 @@
               "9.3"
             ],
             "details": "Modify cmd/root.go to include the new import command. Follow the existing pattern used for other subcommands like install and update. Ensure the command is properly registered and accessible via 'grab import'. Maintain consistency with existing command integration patterns and help text generation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests to verify the import command is properly registered and accessible through the main CLI. Test help text generation and command discovery functionality."
           },
           {
@@ -285,7 +285,7 @@
               "9.4"
             ],
             "details": "Implement the RunE function that will be called when the import command is executed. Add basic error handling and logging. Create a placeholder structure for the main import logic that will be implemented in subsequent tasks. Ensure proper context handling and graceful error reporting. Follow grab's existing patterns for command execution and error handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for the RunE function execution path, error handling scenarios, and integration with the command structure. Verify proper error propagation and logging functionality."
           }
         ]
@@ -300,7 +300,7 @@
         "dependencies": [
           9
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -308,7 +308,7 @@
             "description": "Create Go structs and types to represent parsed GitHub release URL components",
             "dependencies": [],
             "details": "Define a GitHubReleaseURL struct with fields for Organization, Repository, Tag/Version, and IsLatest flag. Create supporting types for URL validation results and parsing errors. Include methods for string representation and validation of parsed components.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for struct creation, field validation, and string methods. Test edge cases with empty or invalid field values."
           },
           {
@@ -319,7 +319,7 @@
               "10.1"
             ],
             "details": "Use net/url.Parse() to validate and parse URLs. Extract path segments to identify organization, repository, and tag components. Handle both versioned releases (/releases/tag/v1.2.3) and latest releases (/releases/latest). Implement robust path parsing with proper error handling for malformed URLs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with valid GitHub release URLs in various formats. Test malformed URLs, non-GitHub domains, and incomplete paths."
           },
           {
@@ -330,7 +330,7 @@
               "10.2"
             ],
             "details": "Verify URL scheme is https, host is github.com, and path follows /owner/repo/releases/tag/* or /owner/repo/releases/latest pattern. Reject URLs pointing to other GitHub paths (issues, pull requests, etc.) or non-GitHub domains. Implement strict validation rules for GitHub release URL format.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for domain validation, path pattern matching, and rejection of non-release GitHub URLs. Test edge cases with different subdomains and protocols."
           },
           {
@@ -341,7 +341,7 @@
               "10.3"
             ],
             "details": "Extract version/tag from URL path segments. Handle semantic versions (v1.2.3), plain versions (1.2.3), and /releases/latest endpoints. Validate extracted versions using basic format checking. Store original tag string and parsed version separately for different use cases.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with various version formats including semantic versions, plain numbers, and custom tag formats. Test /releases/latest handling and version extraction accuracy."
           },
           {
@@ -352,7 +352,7 @@
               "10.4"
             ],
             "details": "Create ParseGitHubReleaseURL() function that returns parsed URL struct or descriptive error. Implement custom error types for different validation failures (invalid domain, malformed path, missing version). Provide clear error messages indicating what was expected vs what was found. Include helper functions for common validation checks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests combining all parsing components. Test error message clarity and appropriate error types for different failure scenarios. Verify public API usability and error handling robustness."
           }
         ]
@@ -1043,7 +1043,7 @@
     ],
     "metadata": {
       "created": "2025-07-22T14:08:00.822Z",
-      "updated": "2025-07-27T19:10:10.348Z",
+      "updated": "2025-07-27T19:25:24.480Z",
       "description": "Tasks for master context"
     }
   }
