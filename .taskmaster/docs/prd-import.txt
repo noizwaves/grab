@@ -1,0 +1,270 @@
+# Product Requirements Document: `grab import` Command
+
+## Executive Summary
+
+The `grab import` command will automatically generate package specification YAML files by analyzing GitHub release URLs. This feature will streamline the process of adding new packages to grab by auto-detecting release patterns, asset naming conventions, and binary configurations from existing GitHub releases.
+
+## Problem Statement
+
+Currently, creating package specifications for grab requires:
+1. Manual analysis of GitHub releases to understand naming patterns
+2. Manual creation of YAML files with complex templating
+3. Trial-and-error to determine correct asset filenames and binary paths
+4. Deep understanding of grab's package specification format
+
+This creates friction for users wanting to add new packages and limits grab's ecosystem growth.
+
+## Success Criteria
+
+- Users can generate a working package spec with a single command
+- 90%+ of generated specs work without manual modification for common package patterns
+- Command fails fast (-1 exit code) when patterns cannot be reliably determined
+- Clear error messages when automatic detection fails
+
+## User Stories
+
+### Primary Use Case
+**As a grab user**, I want to run `grab import https://github.com/boyter/scc/releases/tag/v3.5.0` and get a working package specification file so I can quickly add new tools to my grab installation.
+
+### Secondary Use Cases
+- **As a package maintainer**, I want to validate that my release follows detectable patterns
+- **As a grab contributor**, I want to quickly add popular CLI tools to the official repository
+- **As a developer**, I want deterministic behavior - either it works perfectly or fails clearly
+
+## Functional Requirements
+
+### Core Command Interface
+```bash
+grab import <github-release-url>
+```
+
+**No command-line options** - the command makes educated guesses and either succeeds completely or fails with exit code -1.
+
+### URL Pattern Support
+The command must support these GitHub release URL formats:
+- `https://github.com/owner/repo/releases/tag/v1.2.3`
+- `https://github.com/owner/repo/releases/tag/1.2.3`
+- `https://github.com/owner/repo/releases/latest`
+
+### Automatic Pattern Detection
+
+The command will analyze the specified release and make educated guesses for:
+
+1. **Release Name Pattern**
+   - Extract version from tag name
+   - Generate template (e.g., "v{{ .Version }}" or "{{ .Version }}")
+
+2. **Version Regex**
+   - Detect semantic versioning patterns
+   - Generate appropriate regex (e.g., `\d+\.\d+\.\d+`)
+
+3. **Asset Filenames by Platform**
+   - Identify assets for: darwin/amd64, darwin/arm64, linux/amd64, linux/arm64
+   - Generate filename templates (e.g., `package-{{ .Version }}-darwin-amd64.tar.gz`)
+
+4. **Program Version Detection**
+   - Try common version arguments: `--version`, `-v`, `version`
+   - Generate version regex based on expected output format
+
+5. **Binary Path** (when needed)
+   - Default to package name for single binaries
+   - Detect path within archives when applicable
+
+### Failure Conditions (Exit -1)
+The command must fail with exit code -1 when:
+- Cannot determine consistent release name pattern
+- Version regex cannot be reliably generated
+- Missing assets for core platforms (linux/amd64, darwin/amd64)
+- Multiple possible patterns detected (ambiguous)
+- Assets don't follow detectable naming conventions
+- Network errors or API failures
+
+### Success Output
+When successful, the command will:
+- Generate a complete package YAML file in `~/.grab/repository/{package-name}.yml`
+- Print confirmation message with package name and detected patterns
+- Exit with code 0
+
+## Technical Implementation
+
+### Command Structure
+```go
+// cmd/import.go
+func NewImportCommand() *cobra.Command {
+    cmd := &cobra.Command{
+        Use:   "import <github-release-url>",
+        Short: "Generate package spec from GitHub release",
+        Args:  cobra.ExactArgs(1),
+        RunE:  runImport,
+    }
+    return cmd
+}
+```
+
+### Core Algorithm
+
+1. **Parse URL** - Extract org, repo, and version/tag
+2. **Fetch Release Data** - Get release information via GitHub API
+3. **Pattern Analysis** - Analyze assets to detect naming patterns
+4. **Validation** - Ensure patterns are unambiguous and complete
+5. **Generate Spec** - Create package YAML with detected patterns
+6. **Write File** - Save to repository directory
+
+### Pattern Detection Logic
+
+#### Release Name Pattern
+```go
+// Examples:
+// Tag "v1.2.3" → Release name "v{{ .Version }}"
+// Tag "1.2.3" → Release name "{{ .Version }}"
+// Tag "release-1.2.3" → Release name "release-{{ .Version }}"
+```
+
+#### Asset Filename Detection
+```go
+// Required platforms: darwin/amd64, darwin/arm64, linux/amd64, linux/arm64
+// Look for patterns like:
+// - package-1.2.3-darwin-amd64.tar.gz
+// - package_darwin_amd64.tar.gz  
+// - package-darwin-x86_64.tar.gz
+```
+
+#### Version Regex Generation
+```go
+// Semantic versioning: \d+\.\d+\.\d+
+// With patch: \d+\.\d+\.\d+
+// With pre-release: \d+\.\d+\.\d+(-\w+)?
+```
+
+### Error Handling
+
+#### Clear Failure Messages
+```bash
+# Missing platforms
+Error: Missing required platform assets
+Found: linux/amd64, darwin/amd64  
+Missing: darwin/arm64, linux/arm64
+Cannot generate reliable package specification.
+
+# Ambiguous patterns  
+Error: Multiple asset naming patterns detected
+Pattern 1: package-{{ .Version }}-{platform}-{arch}.tar.gz
+Pattern 2: package_{platform}_{arch}_{{ .Version }}.tar.gz
+Cannot determine consistent pattern.
+
+# API failures
+Error: Unable to fetch release information
+GitHub API returned: 404 Not Found
+Verify the repository and release exist.
+```
+
+## User Experience Design
+
+### Success Flow
+```bash
+$ grab import https://github.com/boyter/scc/releases/tag/v3.5.0
+
+Analyzing release boyter/scc v3.5.0...
+✓ Detected release pattern: v{{ .Version }}
+✓ Found assets for all required platforms  
+✓ Generated version regex: \d+\.\d+\.\d+
+✓ Detected version command: --version
+
+Package specification created: ~/.grab/repository/scc.yml
+```
+
+### Failure Flow
+```bash
+$ grab import https://github.com/example/tool/releases/tag/v1.0.0
+
+Analyzing release example/tool v1.0.0...
+✗ Missing assets for required platforms
+  Found: linux/amd64
+  Required: darwin/amd64, darwin/arm64, linux/amd64, linux/arm64
+
+Cannot generate package specification.
+```
+
+## Edge Cases and Limitations
+
+### Supported Scenarios
+- Standard semantic versioning (v1.2.3, 1.2.3)
+- Consistent platform naming across standard platforms
+- Common archive formats (tar.gz, tar.xz, zip)
+- Predictable asset naming patterns
+
+### Unsupported Scenarios (Will Fail)
+- Irregular version schemes
+- Missing platform support
+- Inconsistent asset naming
+- Complex multi-binary releases
+- Non-standard platform identifiers
+
+### Philosophy
+The command follows a "fail fast" approach - if patterns cannot be reliably detected, it's better to fail immediately than generate a potentially broken specification.
+
+## Testing Strategy
+
+### Test Cases
+1. **Standard packages** - boyter/scc, cli/cli (should succeed)
+2. **Missing platforms** - packages without arm64 support (should fail)  
+3. **Irregular naming** - inconsistent asset names (should fail)
+4. **API errors** - network failures, 404s (should fail)
+5. **Edge versions** - pre-release, build metadata (context-dependent)
+
+### Validation
+- Generated specs must be valid YAML
+- All required fields must be populated
+- Pattern templates must be syntactically correct
+- Exit codes must match success/failure states
+
+## Success Metrics
+
+- 90% success rate for well-maintained CLI tools
+- 0% false positives (generated specs that don't work)
+- Clear, actionable error messages for all failure cases
+- <5 second execution time for typical cases
+
+## Implementation Timeline
+
+### Week 1: Core Implementation
+- URL parsing and GitHub API integration
+- Basic pattern detection algorithms
+- YAML generation and file writing
+
+### Week 2: Pattern Intelligence  
+- Enhanced asset pattern recognition
+- Version regex generation
+- Comprehensive error handling
+
+### Week 3: Testing and Polish
+- Edge case testing
+- Error message refinement
+- Documentation and examples
+
+## Dependencies
+
+### External
+- GitHub API (using existing grab authentication)
+- YAML library (existing dependency)
+
+### Internal  
+- Existing grab configuration system
+- GitHub client package
+- Package specification types
+
+## Risk Mitigation
+
+### Pattern Detection Failures
+- Conservative approach - fail rather than guess incorrectly
+- Comprehensive testing with real-world packages
+- Clear documentation of supported patterns
+
+### API Reliability
+- Proper error handling for all API failures
+- Respect rate limits and authentication
+- Graceful degradation when possible
+
+---
+
+This PRD focuses on a simple, reliable command that either works perfectly or fails clearly, making it easy for users to understand when the tool can help them and when manual specification is needed.
