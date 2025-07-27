@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -23,66 +24,85 @@ func makeImportCommand() *cobra.Command {
 			inputURL := args[0]
 
 			// Validate GitHub release URL
-			if err := validateGitHubReleaseURL(inputURL); err != nil {
+			err := validateGitHubReleaseURL(inputURL)
+			if err != nil {
 				return fmt.Errorf("invalid GitHub release URL: %w", err)
 			}
 
-			// TODO: Implement import logic
+			// Import logic will be implemented in subsequent tasks
 			fmt.Printf("Import functionality not yet implemented for URL: %s\n", inputURL)
-			return fmt.Errorf("import command is not yet implemented")
+
+			return errors.New("import command is not yet implemented")
 		},
 	}
 
 	return importCmd
 }
 
-// validateGitHubReleaseURL validates that the URL is a valid GitHub release URL
-// valid URL schemes:
+const (
+	minPathComponents    = 4
+	minTagPathComponents = 5
+)
+
+// validateGitHubReleaseURL validates that the URL is a valid GitHub release URL.
+// Valid URL schemes:
 // - https://github.com/<org>/<repo>/releases/tag/<version>
 // - https://github.com/<org>/<repo>/releases/latest
 // - https://github.com/<org>/<repo>/releases/<version>
 func validateGitHubReleaseURL(inputURL string) error {
-	// Parse the URL
+	parsedURL, err := validateBasicURL(inputURL)
+	if err != nil {
+		return err
+	}
+
+	return validateGitHubReleasePath(parsedURL.Path)
+}
+
+func validateBasicURL(inputURL string) (*url.URL, error) {
 	parsedURL, err := url.Parse(inputURL)
 	if err != nil {
-		return fmt.Errorf("invalid URL format: %w", err)
+		return nil, fmt.Errorf("invalid URL format: %w", err)
 	}
 
-	// Check scheme
 	if parsedURL.Scheme != "https" {
-		return fmt.Errorf("URL must use HTTPS scheme, got: %s", parsedURL.Scheme)
+		return nil, fmt.Errorf("URL must use HTTPS scheme, got: %s", parsedURL.Scheme)
 	}
 
-	// Check host
 	if parsedURL.Host != "github.com" {
-		return fmt.Errorf("URL must be from github.com, got: %s", parsedURL.Host)
+		return nil, fmt.Errorf("URL must be from github.com, got: %s", parsedURL.Host)
 	}
 
-	// Check path structure: /org/repo/releases/tag/version or /org/repo/releases/latest
-	pathParts := strings.Split(strings.Trim(parsedURL.Path, "/"), "/")
-	if len(pathParts) < 4 {
-		return fmt.Errorf("invalid GitHub path structure")
+	return parsedURL, nil
+}
+
+func validateGitHubReleasePath(path string) error {
+	pathParts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(pathParts) < minPathComponents {
+		return errors.New("invalid GitHub path structure")
 	}
 
-	// Validate path components
 	if pathParts[2] != "releases" {
-		return fmt.Errorf("URL must be a GitHub releases URL")
+		return errors.New("URL must be a GitHub releases URL")
 	}
 
-	if pathParts[3] == "latest" {
-		// /releases/latest format
+	return validateReleaseFormat(pathParts)
+}
+
+func validateReleaseFormat(pathParts []string) error {
+	switch pathParts[3] {
+	case "latest":
 		return nil
-	} else if pathParts[3] == "tag" {
-		// /releases/tag/version format
-		if len(pathParts) < 5 {
-			return fmt.Errorf("tag URL must specify a version")
+	case "tag":
+		if len(pathParts) < minTagPathComponents {
+			return errors.New("tag URL must specify a version")
 		}
-	} else if len(pathParts) == 4 {
-		// /releases/version format - this is valid but redirects to /releases/tag/version
-		return nil
-	} else {
-		return fmt.Errorf("URL must be a release tag, latest release, or direct version")
-	}
 
-	return nil
+		return nil
+	default:
+		if len(pathParts) == minPathComponents {
+			return nil
+		}
+
+		return errors.New("URL must be a release tag, latest release, or direct version")
+	}
 }

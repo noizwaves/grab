@@ -5,7 +5,32 @@ import (
 )
 
 func TestParseGitHubReleaseURL(t *testing.T) {
-	tests := []struct {
+	tests := getParseTestCases()
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			got, err := ParseGitHubReleaseURL(testCase.url)
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("ParseGitHubReleaseURL() error = %v, wantErr %v", err, testCase.wantErr)
+
+				return
+			}
+
+			if !testCase.wantErr {
+				validateParseResult(t, got, testCase.want)
+			}
+		})
+	}
+}
+
+//nolint:funlen
+func getParseTestCases() []struct {
+	name    string
+	url     string
+	want    *GitHubReleaseURL
+	wantErr bool
+} {
+	return []struct {
 		name    string
 		url     string
 		want    *GitHubReleaseURL
@@ -95,32 +120,29 @@ func TestParseGitHubReleaseURL(t *testing.T) {
 			wantErr: true,
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseGitHubReleaseURL(tt.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseGitHubReleaseURL() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				if got.Organization != tt.want.Organization {
-					t.Errorf("ParseGitHubReleaseURL() Organization = %v, want %v", got.Organization, tt.want.Organization)
-				}
-				if got.Repository != tt.want.Repository {
-					t.Errorf("ParseGitHubReleaseURL() Repository = %v, want %v", got.Repository, tt.want.Repository)
-				}
-				if got.Tag != tt.want.Tag {
-					t.Errorf("ParseGitHubReleaseURL() Tag = %v, want %v", got.Tag, tt.want.Tag)
-				}
-				if got.IsLatest != tt.want.IsLatest {
-					t.Errorf("ParseGitHubReleaseURL() IsLatest = %v, want %v", got.IsLatest, tt.want.IsLatest)
-				}
-				if got.Original != tt.want.Original {
-					t.Errorf("ParseGitHubReleaseURL() Original = %v, want %v", got.Original, tt.want.Original)
-				}
-			}
-		})
+func validateParseResult(t *testing.T, got, want *GitHubReleaseURL) {
+	t.Helper()
+
+	if got.Organization != want.Organization {
+		t.Errorf("ParseGitHubReleaseURL() Organization = %v, want %v", got.Organization, want.Organization)
+	}
+
+	if got.Repository != want.Repository {
+		t.Errorf("ParseGitHubReleaseURL() Repository = %v, want %v", got.Repository, want.Repository)
+	}
+
+	if got.Tag != want.Tag {
+		t.Errorf("ParseGitHubReleaseURL() Tag = %v, want %v", got.Tag, want.Tag)
+	}
+
+	if got.IsLatest != want.IsLatest {
+		t.Errorf("ParseGitHubReleaseURL() IsLatest = %v, want %v", got.IsLatest, want.IsLatest)
+	}
+
+	if got.Original != want.Original {
+		t.Errorf("ParseGitHubReleaseURL() Original = %v, want %v", got.Original, want.Original)
 	}
 }
 
@@ -162,13 +184,13 @@ func TestGitHubReleaseURL_String(t *testing.T) {
 
 func TestGitHubReleaseURL_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
-		url     *GitHubReleaseURL
-		wantErr bool
+		name       string
+		releaseURL *GitHubReleaseURL
+		wantErr    bool
 	}{
 		{
 			name: "valid tag release",
-			url: &GitHubReleaseURL{
+			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
 				Tag:          "v3.5.0",
@@ -178,7 +200,7 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		},
 		{
 			name: "valid latest release",
-			url: &GitHubReleaseURL{
+			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
 				IsLatest:     true,
@@ -187,7 +209,7 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		},
 		{
 			name: "missing organization",
-			url: &GitHubReleaseURL{
+			releaseURL: &GitHubReleaseURL{
 				Repository: "scc",
 				Tag:        "v3.5.0",
 			},
@@ -195,7 +217,7 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		},
 		{
 			name: "missing repository",
-			url: &GitHubReleaseURL{
+			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
 				Tag:          "v3.5.0",
 			},
@@ -203,7 +225,7 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		},
 		{
 			name: "missing tag for non-latest",
-			url: &GitHubReleaseURL{
+			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
 				IsLatest:     false,
@@ -212,10 +234,11 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.url.Validate(); (err != nil) != tt.wantErr {
-				t.Errorf("GitHubReleaseURL.Validate() error = %v, wantErr %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.releaseURL.Validate()
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("GitHubReleaseURL.Validate() error = %v, wantErr %v", err, testCase.wantErr)
 			}
 		})
 	}

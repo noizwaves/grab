@@ -122,3 +122,7 @@ Uses Go templates for dynamic URL and filename generation based on:
 ## Development Guidelines
 
 - Do not test private functions directly. Instead, call the public functions that use the private functions.
+
+## Go Best Practices
+
+- Create new errors using `errors.New` instead of `fmt.Errorf`
