@@ -119,6 +119,10 @@ Uses Go templates for dynamic URL and filename generation based on:
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
 
+## Code Generation Guidelines
+
+- **IMPORTANT**: All generated text-based files must end with a trailing newline character. This ensures proper file formatting, better git diffs, and compliance with POSIX standards.
+
 ## Development Guidelines
 
 - Do not test private functions directly. Instead, call the public functions that use the private functions.
