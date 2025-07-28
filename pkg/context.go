@@ -24,6 +24,7 @@ type Context struct {
 	BinPath      string
 	ConfigPath   string
 	Config       *configRoot
+	RepoPath     string
 	Platform     string
 	Architecture string
 }
@@ -76,6 +77,7 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 		BinPath:      binPath,
 		ConfigPath:   configFilePath,
 		Config:       config,
+		RepoPath:     repoPath,
 		Platform:     runtime.GOOS,
 		Architecture: runtime.GOARCH,
 	}, err
@@ -90,6 +92,12 @@ func (c *Context) EnsureBinPathExists() error {
 	return nil
 }
 
+func (c *Context) SavePackage(packageConfig *ConfigPackage) error {
+	packagePath := path.Join(c.RepoPath, packageConfig.Metadata.Name+".yml")
+
+	return savePackage(packageConfig, packagePath)
+}
+
 func getPackageNames(repository *repository) []string {
 	names := make([]string, len(repository.Packages))
 	for idx, pkg := range repository.Packages {
@@ -99,10 +107,10 @@ func getPackageNames(repository *repository) []string {
 	return names
 }
 
-func locatePackage(repository *repository, name string) (*configPackage, error) {
+func locatePackage(repository *repository, name string) (*ConfigPackage, error) {
 	slog.Debug("Looking for configured package in repository", "name", name)
 
-	idx := slices.IndexFunc(repository.Packages, func(p *configPackage) bool { return p.Metadata.Name == name })
+	idx := slices.IndexFunc(repository.Packages, func(p *ConfigPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
 		slog.Error("Package missing from repository", "name", name)
 

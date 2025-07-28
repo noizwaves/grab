@@ -2,9 +2,10 @@ package github
 
 // Release represents a GitHub release with asset information.
 type Release struct {
-	Name   string  `json:"name"`
-	URL    string  `json:"html_url"` //nolint:tagliatelle
-	Assets []Asset `json:"assets"`
+	Name    string  `json:"name"`
+	URL     string  `json:"html_url"` //nolint:tagliatelle
+	TagName string  `json:"tag_name"`
+	Assets  []Asset `json:"assets"`
 }
 
 // Asset represents a GitHub release asset.

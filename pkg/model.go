@@ -31,7 +31,7 @@ type Binary struct {
 	VersionRegex *regexp.Regexp
 }
 
-func NewBinary(name, version string, config configPackage) (*Binary, error) {
+func NewBinary(name, version string, config ConfigPackage) (*Binary, error) {
 	versionRegex, err := regexp.Compile(config.Spec.Program.VersionRegex)
 	if err != nil {
 		return nil, fmt.Errorf("version regex does not compile: %w", err)

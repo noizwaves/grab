@@ -10,8 +10,9 @@ import (
 func TestGetReleaseByTag_Success(t *testing.T) {
 	// Mock GitHub API response
 	mockRelease := Release{
-		Name: "v1.2.3",
-		URL:  "https://github.com/owner/repo/releases/tag/v1.2.3",
+		Name:    "v1.2.3",
+		TagName: "v1.2.3",
+		URL:     "https://github.com/owner/repo/releases/tag/v1.2.3",
 		Assets: []Asset{
 			{
 				Name:        "app-linux-amd64.tar.gz",

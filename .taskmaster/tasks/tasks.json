@@ -437,7 +437,7 @@
         "dependencies": [
           11
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -445,7 +445,7 @@
             "description": "Implement detection logic for standard release naming patterns like 'v1.2.3', '1.2.3', and 'release-1.2.3'",
             "dependencies": [],
             "details": "Create a PatternDetector struct with methods to analyze release tag collections. Implement regex patterns for common naming conventions: version-only (1.2.3), v-prefixed (v1.2.3), release-prefixed (release-1.2.3), and date-based patterns. Each pattern should extract the version component and identify the template structure. Return confidence scores for each detected pattern based on consistency across releases.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Unit tests with mock release data containing various naming patterns. Test pattern recognition accuracy with edge cases like mixed patterns and irregular formats."
           },
           {
@@ -1043,7 +1043,7 @@
     ],
     "metadata": {
       "created": "2025-07-22T14:08:00.822Z",
-      "updated": "2025-07-27T20:33:12.495Z",
+      "updated": "2025-07-27T21:20:20.321Z",
       "description": "Tasks for master context"
     }
   }

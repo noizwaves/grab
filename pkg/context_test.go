@@ -43,6 +43,7 @@ func TestNewContext(t *testing.T) {
 
 		assert.Equal(t, result.ConfigPath, path.Join("../testdata/simple/.grab/config.yml"))
 		assert.Equal(t, result.BinPath, path.Join("../testdata/simple/.local/bin"))
+		assert.Equal(t, result.RepoPath, path.Join("../testdata/simple/.grab/repository"))
 		assert.Equal(t, result.Platform, runtime.GOOS)
 		assert.Equal(t, result.Architecture, runtime.GOARCH)
 
@@ -63,6 +64,7 @@ func TestNewContext(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, result.ConfigPath, path.Join(emptyConfigDir, ".grab/config.yml"))
+		assert.Equal(t, result.RepoPath, path.Join(emptyConfigDir, ".grab/repository"))
 		assert.Equal(t, result.BinPath, path.Join("../testdata/simple/.local/bin"))
 		assert.Equal(t, result.Config, &configRoot{
 			Packages: map[string]string{},
@@ -77,6 +79,7 @@ func TestNewContext(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, result.ConfigPath, path.Join("../testdata/simple/.grab/config.yml"))
+		assert.Equal(t, result.RepoPath, path.Join("../testdata/simple/.grab/repository"))
 		assert.Equal(t, result.BinPath, override)
 
 		assert.Equal(t, result.Config, &configRoot{

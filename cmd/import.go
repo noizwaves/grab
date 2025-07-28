@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/noizwaves/grab/pkg/github"
+	"github.com/noizwaves/grab/pkg/importer"
 	"github.com/spf13/cobra"
 )
 
@@ -21,18 +23,27 @@ func makeImportCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
+			context, err := newContext()
+			if err != nil {
+				return fmt.Errorf("error loading context: %w", err)
+			}
+
 			inputURL := args[0]
 
 			// Validate GitHub release URL
-			err := validateGitHubReleaseURL(inputURL)
+			err = validateGitHubReleaseURL(inputURL)
 			if err != nil {
 				return fmt.Errorf("invalid GitHub release URL: %w", err)
 			}
 
-			// Import logic will be implemented in subsequent tasks
-			fmt.Printf("Import functionality not yet implemented for URL: %s\n", inputURL)
+			importer := importer.NewImporter(github.NewClient())
 
-			return errors.New("import command is not yet implemented")
+			err = importer.Import(inputURL, context)
+			if err != nil {
+				return fmt.Errorf("error installing: %w", err)
+			}
+
+			return nil
 		},
 	}
 
