@@ -44,11 +44,23 @@ func NewPlatformPatternDetector(platform string) *PatternDetector {
 	switch platform {
 	case "darwin":
 		return &PatternDetector{
-			patterns: getDarwinPlatformPatterns(),
+			patterns: []pattern{
+				{
+					Name:  "darwin",
+					Regex: regexp.MustCompile(`(?i)darwin`),
+					Value: "darwin",
+				},
+			},
 		}
 	case "linux":
 		return &PatternDetector{
-			patterns: getLinuxPlatformPatterns(),
+			patterns: []pattern{
+				{
+					Name:  "linux",
+					Regex: regexp.MustCompile(`(?i)linux`),
+					Value: "linux",
+				},
+			},
 		}
 	default:
 		panic("unsupported platform: " + platform)
@@ -60,11 +72,33 @@ func NewArchitecturePatternDetector(architecture string) *PatternDetector {
 	switch architecture {
 	case "amd64":
 		return &PatternDetector{
-			patterns: getAmd64ArchitecturePatterns(),
+			patterns: []pattern{
+				{
+					Name:  "amd64",
+					Regex: regexp.MustCompile(`(?i)amd64`),
+					Value: "amd64",
+				},
+				{
+					Name:  "x86_64",
+					Regex: regexp.MustCompile(`(?i)x86_64`),
+					Value: "x86_64",
+				},
+			},
 		}
 	case "arm64":
 		return &PatternDetector{
-			patterns: getArm64ArchitecturePatterns(),
+			patterns: []pattern{
+				{
+					Name:  "arm64",
+					Regex: regexp.MustCompile(`(?i)arm64`),
+					Value: "arm64",
+				},
+				{
+					Name:  "aarch64",
+					Regex: regexp.MustCompile(`(?i)aarch64`),
+					Value: "aarch64",
+				},
+			},
 		}
 	default:
 		panic("unsupported architecture: " + architecture)
@@ -79,54 +113,4 @@ func (pd *PatternDetector) AnalyzeOne(value string) (*DetectedPattern, error) {
 	}
 
 	return nil, errors.New("no matching pattern found")
-}
-
-func getDarwinPlatformPatterns() []pattern {
-	return []pattern{
-		{
-			Name:  "darwin",
-			Regex: regexp.MustCompile(`(?i)darwin`),
-			Value: "darwin",
-		},
-	}
-}
-
-func getLinuxPlatformPatterns() []pattern {
-	return []pattern{
-		{
-			Name:  "linux",
-			Regex: regexp.MustCompile(`(?i)linux`),
-			Value: "linux",
-		},
-	}
-}
-
-func getAmd64ArchitecturePatterns() []pattern {
-	return []pattern{
-		{
-			Name:  "amd64",
-			Regex: regexp.MustCompile(`(?i)amd64`),
-			Value: "amd64",
-		},
-		{
-			Name:  "x86_64",
-			Regex: regexp.MustCompile(`(?i)x86_64`),
-			Value: "x86_64",
-		},
-	}
-}
-
-func getArm64ArchitecturePatterns() []pattern {
-	return []pattern{
-		{
-			Name:  "arm64",
-			Regex: regexp.MustCompile(`(?i)arm64`),
-			Value: "arm64",
-		},
-		{
-			Name:  "aarch64",
-			Regex: regexp.MustCompile(`(?i)aarch64`),
-			Value: "aarch64",
-		},
-	}
 }
