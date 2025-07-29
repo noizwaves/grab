@@ -2,6 +2,8 @@ package importer
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 
 	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
@@ -17,11 +19,13 @@ func NewImporter(githubClient github.Client) *Importer {
 	}
 }
 
-func (i *Importer) Import(url string, context *pkg.Context) error {
+func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
 		return err
 	}
+
+	slog.Info("Importing GitHub Release for %s/%s", releaseURL.Organization, releaseURL.Repository)
 
 	var release *github.Release
 	if releaseURL.IsLatest {
@@ -69,10 +73,12 @@ func (i *Importer) Import(url string, context *pkg.Context) error {
 		},
 	}
 
-	err = context.SavePackage(&packageConfig)
+	packagePath, err := context.SavePackage(&packageConfig)
 	if err != nil {
 		return fmt.Errorf("failed to save package: %w", err)
 	}
+
+	fmt.Fprintf(out, "Package %q saved to %s\n", packageName, packagePath)
 
 	return nil
 }

@@ -92,10 +92,15 @@ func (c *Context) EnsureBinPathExists() error {
 	return nil
 }
 
-func (c *Context) SavePackage(packageConfig *ConfigPackage) error {
+func (c *Context) SavePackage(packageConfig *ConfigPackage) (string, error) {
 	packagePath := path.Join(c.RepoPath, packageConfig.Metadata.Name+".yml")
 
-	return savePackage(packageConfig, packagePath)
+	err := savePackage(packageConfig, packagePath)
+	if err != nil {
+		return "", fmt.Errorf("error saving package: %w", err)
+	}
+
+	return packagePath, nil
 }
 
 func getPackageNames(repository *repository) []string {

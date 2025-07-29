@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/noizwaves/grab/pkg/github"
@@ -38,7 +39,7 @@ func makeImportCommand() *cobra.Command {
 
 			importer := importer.NewImporter(github.NewClient())
 
-			err = importer.Import(inputURL, context)
+			err = importer.Import(context, inputURL, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}
