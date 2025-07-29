@@ -25,7 +25,7 @@ func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error
 		return err
 	}
 
-	slog.Info("Importing GitHub Release for %s/%s", releaseURL.Organization, releaseURL.Repository)
+	slog.Info("Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
 
 	var release *github.Release
 	if releaseURL.IsLatest {
