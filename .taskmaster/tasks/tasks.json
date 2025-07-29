@@ -224,11 +224,826 @@
         "details": "✅ COMPLETED: Successfully completed comprehensive integration testing and backward compatibility verification. All PRD success criteria verified including individual package updates, backward compatibility, clear error messages, output consistency, and no regressions. Integration testing confirmed binary builds successfully, help output shows correct usage, argument validation works properly, error handling functions correctly, code formatting is compliant, and all unit tests pass. Backward compatibility verification confirmed existing `grab update` command behavior unchanged with same error messages, output format, and performance characteristics maintained.",
         "testStrategy": "✅ COMPLETED: End-to-end testing performed with real GitHub API calls and various package configurations. Regression testing confirmed zero breaking changes to existing functionality. Performance testing verified no degradation in update speed. All tests passing with 100% pass rate and successful build verification.",
         "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Create import command structure and CLI interface",
+        "description": "Implement the basic command structure for 'grab import' using Cobra framework with URL argument validation",
+        "details": "Create cmd/import.go with Cobra command structure. Implement NewImportCommand() function that accepts exactly one argument (GitHub release URL). Add basic URL validation to ensure it's a valid GitHub release URL format. Use cobra.ExactArgs(1) for argument validation. Integrate with existing CLI structure in cmd/root.go. Follow existing grab command patterns for consistency.",
+        "testStrategy": "Unit tests for command creation, argument validation, and URL parsing. Test with valid and invalid URL formats. Verify proper error messages for incorrect argument counts.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create cmd/import.go file with basic Cobra command structure",
+            "description": "Set up the foundation for the import command by creating the command file and implementing the NewImportCommand function with proper Cobra integration",
+            "dependencies": [],
+            "details": "Create cmd/import.go file following the existing grab command patterns. Implement NewImportCommand() function that returns a *cobra.Command. Set up basic command metadata including Use, Short, Long descriptions, and RunE function. Follow the same structure as other commands in the codebase for consistency.",
+            "status": "done",
+            "testStrategy": "Unit tests for command creation and basic structure validation. Verify command metadata is properly set and command can be instantiated without errors."
+          },
+          {
+            "id": 2,
+            "title": "Implement argument validation with cobra.ExactArgs(1)",
+            "description": "Add strict argument validation to ensure the import command accepts exactly one GitHub release URL argument",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Configure the Cobra command to use cobra.ExactArgs(1) for argument validation. Implement proper error handling for incorrect argument counts. Ensure error messages are user-friendly and consistent with grab's error messaging patterns. Test edge cases like no arguments and multiple arguments.",
+            "status": "done",
+            "testStrategy": "Unit tests for argument validation including zero arguments, one argument (valid case), and multiple arguments. Verify proper error messages are returned for invalid argument counts."
+          },
+          {
+            "id": 3,
+            "title": "Implement GitHub release URL validation logic",
+            "description": "Create URL validation functionality to ensure the provided argument is a valid GitHub release URL format",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "Implement URL parsing and validation to check if the provided URL follows GitHub release URL patterns (github.com/org/repo/releases/tag/version). Use Go's url package for parsing. Validate URL scheme (https), host (github.com), and path structure. Create helper functions for URL validation that can be reused. Handle edge cases like shortened URLs or different GitHub URL formats.",
+            "status": "done",
+            "testStrategy": "Unit tests with valid and invalid URL formats including proper GitHub release URLs, malformed URLs, non-GitHub URLs, and edge cases. Verify appropriate error messages for each validation failure."
+          },
+          {
+            "id": 4,
+            "title": "Integrate import command with root command structure",
+            "description": "Add the import command to the main CLI by integrating it with cmd/root.go following existing patterns",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Modify cmd/root.go to include the new import command. Follow the existing pattern used for other subcommands like install and update. Ensure the command is properly registered and accessible via 'grab import'. Maintain consistency with existing command integration patterns and help text generation.",
+            "status": "done",
+            "testStrategy": "Integration tests to verify the import command is properly registered and accessible through the main CLI. Test help text generation and command discovery functionality."
+          },
+          {
+            "id": 5,
+            "title": "Implement RunE function with basic error handling and structure",
+            "description": "Create the main execution function for the import command with proper error handling and prepare structure for future implementation",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "Implement the RunE function that will be called when the import command is executed. Add basic error handling and logging. Create a placeholder structure for the main import logic that will be implemented in subsequent tasks. Ensure proper context handling and graceful error reporting. Follow grab's existing patterns for command execution and error handling.",
+            "status": "done",
+            "testStrategy": "Unit tests for the RunE function execution path, error handling scenarios, and integration with the command structure. Verify proper error propagation and logging functionality."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement GitHub release URL parsing and validation",
+        "description": "Parse GitHub release URLs to extract organization, repository, and version/tag information",
+        "details": "Create URL parsing logic to extract org, repo, and tag/version from GitHub release URLs. Support formats: github.com/owner/repo/releases/tag/v1.2.3, github.com/owner/repo/releases/tag/1.2.3, github.com/owner/repo/releases/latest. Use net/url package for parsing. Implement validation to ensure URLs point to GitHub releases. Create types for parsed URL components.",
+        "testStrategy": "Unit tests with various URL formats including edge cases. Test invalid URLs, non-GitHub URLs, and malformed release URLs. Verify correct extraction of org, repo, and version components.",
+        "priority": "high",
+        "dependencies": [
+          9
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define URL parsing types and structures",
+            "description": "Create Go structs and types to represent parsed GitHub release URL components",
+            "dependencies": [],
+            "details": "Define a GitHubReleaseURL struct with fields for Organization, Repository, Tag/Version, and IsLatest flag. Create supporting types for URL validation results and parsing errors. Include methods for string representation and validation of parsed components.",
+            "status": "done",
+            "testStrategy": "Unit tests for struct creation, field validation, and string methods. Test edge cases with empty or invalid field values."
+          },
+          {
+            "id": 2,
+            "title": "Implement core URL parsing logic",
+            "description": "Parse GitHub release URLs using net/url package to extract path components",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Use net/url.Parse() to validate and parse URLs. Extract path segments to identify organization, repository, and tag components. Handle both versioned releases (/releases/tag/v1.2.3) and latest releases (/releases/latest). Implement robust path parsing with proper error handling for malformed URLs.",
+            "status": "done",
+            "testStrategy": "Unit tests with valid GitHub release URLs in various formats. Test malformed URLs, non-GitHub domains, and incomplete paths."
+          },
+          {
+            "id": 3,
+            "title": "Add GitHub domain and path validation",
+            "description": "Validate that URLs point to GitHub and follow expected release path patterns",
+            "dependencies": [
+              "10.2"
+            ],
+            "details": "Verify URL scheme is https, host is github.com, and path follows /owner/repo/releases/tag/* or /owner/repo/releases/latest pattern. Reject URLs pointing to other GitHub paths (issues, pull requests, etc.) or non-GitHub domains. Implement strict validation rules for GitHub release URL format.",
+            "status": "done",
+            "testStrategy": "Unit tests for domain validation, path pattern matching, and rejection of non-release GitHub URLs. Test edge cases with different subdomains and protocols."
+          },
+          {
+            "id": 4,
+            "title": "Extract and validate version/tag information",
+            "description": "Parse tag segments to extract version information and handle latest releases",
+            "dependencies": [
+              "10.3"
+            ],
+            "details": "Extract version/tag from URL path segments. Handle semantic versions (v1.2.3), plain versions (1.2.3), and /releases/latest endpoints. Validate extracted versions using basic format checking. Store original tag string and parsed version separately for different use cases.",
+            "status": "done",
+            "testStrategy": "Unit tests with various version formats including semantic versions, plain numbers, and custom tag formats. Test /releases/latest handling and version extraction accuracy."
+          },
+          {
+            "id": 5,
+            "title": "Create public parsing API and error handling",
+            "description": "Implement public functions for URL parsing with comprehensive error handling",
+            "dependencies": [
+              "10.4"
+            ],
+            "details": "Create ParseGitHubReleaseURL() function that returns parsed URL struct or descriptive error. Implement custom error types for different validation failures (invalid domain, malformed path, missing version). Provide clear error messages indicating what was expected vs what was found. Include helper functions for common validation checks.",
+            "status": "done",
+            "testStrategy": "Integration tests combining all parsing components. Test error message clarity and appropriate error types for different failure scenarios. Verify public API usability and error handling robustness."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Enhance GitHub API client for release data fetching",
+        "description": "Extend existing GitHub client to fetch detailed release information including assets",
+        "details": "Extend pkg/github client to fetch release data via GitHub API v4. Implement GetReleaseByTag() and GetLatestRelease() methods. Fetch release assets with detailed metadata including name, download URL, and size. Handle authentication using existing grab GitHub token setup. Implement proper error handling for 404s, rate limits, and network failures. Use context for request timeout handling.",
+        "testStrategy": "Unit tests with mocked GitHub API responses. Integration tests with real GitHub API calls. Test error conditions like missing releases, private repos, and rate limit scenarios.",
+        "priority": "high",
+        "dependencies": [
+          10
+        ],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze existing GitHub client structure and authentication",
+            "description": "Review current pkg/github client implementation to understand existing patterns, authentication handling, and API request structure",
+            "dependencies": [],
+            "details": "Examine existing GitHub client code in pkg/github/ to understand current architecture, authentication mechanisms using GH_TOKEN, request patterns, and error handling approaches. Document current API endpoints used and identify extension points for release data fetching.\n<info added on 2025-07-27T20:07:44.386Z>\nAnalysis complete. Current GitHub client architecture documented with interface pattern, GH_TOKEN authentication, REST API v3 usage, and existing Release struct. Identified extension points for GetReleaseByTag method and asset information. Mock client testing infrastructure available for new method implementation.\n</info added on 2025-07-27T20:07:44.386Z>",
+            "status": "done",
+            "testStrategy": "Review existing test patterns and mock structures in pkg/github tests to understand testing approach for new methods."
+          },
+          {
+            "id": 2,
+            "title": "Implement GetReleaseByTag method with asset fetching",
+            "description": "Create GetReleaseByTag method to fetch specific release data by tag with detailed asset information",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Implement GetReleaseByTag(ctx context.Context, org, repo, tag string) method using GitHub API v4. Fetch release data including assets with metadata (name, download URL, size). Use existing authentication setup and implement proper context handling for timeouts.\n<info added on 2025-07-27T20:09:57.213Z>\nImplementation successfully completed with comprehensive GitHub API integration. Method fully tested and integrated with existing client architecture. Added proper asset metadata handling and maintained backward compatibility across all existing functionality.\n</info added on 2025-07-27T20:09:57.213Z>\n<info added on 2025-07-27T20:27:04.666Z>\nFixed all linting issues in GitHub client test file. Corrected parameter naming, error handling, JSON encoding checks, imports formatting, and whitespace issues. All golangci-lint checks now pass for the GitHub package.\n</info added on 2025-07-27T20:27:04.666Z>",
+            "status": "done",
+            "testStrategy": "Unit tests with mocked GitHub API responses for various release scenarios. Test with different tag formats and asset configurations."
+          },
+          {
+            "id": 3,
+            "title": "Implement GetLatestRelease method with asset fetching",
+            "description": "Create GetLatestRelease method to fetch the most recent release data with asset information",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Implement GetLatestRelease(ctx context.Context, org, repo string) method using GitHub API v4. Fetch latest release data including complete asset metadata. Handle cases where no releases exist or all releases are pre-releases.\n<info added on 2025-07-27T20:33:09.192Z>\nImplementation complete with comprehensive changes across codebase. Added GetLatestRelease method to pkg/github/client.go with context.Context parameter for timeout handling. Method fetches latest release data with complete asset metadata via GitHub API v4. Handles edge cases including repositories with no releases or only pre-releases. Updated pkg/github/response.go with proper asset structures. Modified pkg/updater.go to use new method signature. Updated mock client in pkg/internal/github/mockclient.go for test compatibility. Added extensive unit tests in pkg/github/client_test.go covering success scenarios, error handling, and edge cases. All tests pass and code passes linting validation.\n</info added on 2025-07-27T20:33:09.192Z>",
+            "status": "done",
+            "testStrategy": "Unit tests with mocked responses for repositories with and without releases. Test pre-release handling and empty repository scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Implement comprehensive error handling and rate limiting",
+            "description": "Add robust error handling for GitHub API failures including 404s, rate limits, and network issues",
+            "dependencies": [
+              "11.2",
+              "11.3"
+            ],
+            "details": "Implement error handling for HTTP 404 (not found), HTTP 403 (rate limit exceeded), network timeouts, and authentication failures. Create custom error types for different failure scenarios. Implement exponential backoff for rate limit handling and proper context cancellation support.",
+            "status": "pending",
+            "testStrategy": "Unit tests for each error condition using mock responses. Test rate limit retry logic and context cancellation scenarios."
+          },
+          {
+            "id": 5,
+            "title": "Add integration tests and update client interface",
+            "description": "Create integration tests with real GitHub API calls and update client interface to include new methods",
+            "dependencies": [
+              "11.2",
+              "11.3",
+              "11.4"
+            ],
+            "details": "Add new methods to GitHub client interface and update any existing interface implementations. Create integration tests that make real API calls to public repositories. Ensure backward compatibility with existing client usage patterns.",
+            "status": "pending",
+            "testStrategy": "Integration tests with real GitHub API calls using public repositories like golang/go. Test both successful and error scenarios with actual API responses."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement release name pattern detection",
+        "description": "Analyze release tags to detect and generate release name templates",
+        "details": "Create pattern detection logic to analyze tag names and generate Go template patterns. Handle common patterns: 'v1.2.3' → 'v{{ .Version }}', '1.2.3' → '{{ .Version }}', 'release-1.2.3' → 'release-{{ .Version }}'. Use regular expressions to extract version components. Validate that detected patterns are consistent and unambiguous. Create template validation to ensure generated patterns are syntactically correct.",
+        "testStrategy": "Unit tests with various tag naming patterns. Test edge cases like irregular prefixes/suffixes. Verify template generation accuracy and validate generated Go templates.",
+        "priority": "medium",
+        "dependencies": [
+          11
+        ],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create common release pattern recognition",
+            "description": "Implement detection logic for standard release naming patterns like 'v1.2.3', '1.2.3', and 'release-1.2.3'",
+            "dependencies": [],
+            "details": "Create a PatternDetector struct with methods to analyze release tag collections. Implement regex patterns for common naming conventions: version-only (1.2.3), v-prefixed (v1.2.3), release-prefixed (release-1.2.3), and date-based patterns. Each pattern should extract the version component and identify the template structure. Return confidence scores for each detected pattern based on consistency across releases.",
+            "status": "in-progress",
+            "testStrategy": "Unit tests with mock release data containing various naming patterns. Test pattern recognition accuracy with edge cases like mixed patterns and irregular formats."
+          },
+          {
+            "id": 2,
+            "title": "Implement version component extraction",
+            "description": "Create regex-based extraction logic to identify version numbers from release tags",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Develop robust regex patterns to extract semantic version components (major.minor.patch) from release names. Handle additional version formats like pre-release tags (1.2.3-alpha), build metadata (1.2.3+build.1), and shortened versions (1.2). Create validation to ensure extracted versions follow semantic versioning principles. Return structured version data with original tag and extracted components.",
+            "status": "pending",
+            "testStrategy": "Comprehensive test suite covering semantic versioning variations, pre-release formats, and malformed version strings. Verify extraction accuracy and validation logic."
+          },
+          {
+            "id": 3,
+            "title": "Generate Go template patterns",
+            "description": "Convert detected patterns into valid Go template strings with version placeholders",
+            "dependencies": [
+              "12.2"
+            ],
+            "details": "Transform analyzed release patterns into Go template format using {{ .Version }} placeholder. Map common patterns: 'v1.2.3' becomes 'v{{ .Version }}', '1.2.3' becomes '{{ .Version }}', 'release-1.2.3' becomes 'release-{{ .Version }}'. Handle complex patterns with multiple components and ensure template syntax is valid. Include template compilation validation to verify generated patterns work correctly.",
+            "status": "pending",
+            "testStrategy": "Test template generation with various input patterns. Validate that generated templates compile successfully and produce expected output when executed with version data."
+          },
+          {
+            "id": 4,
+            "title": "Implement pattern consistency validation",
+            "description": "Validate that detected patterns are consistent across all releases and unambiguous",
+            "dependencies": [
+              "12.1",
+              "12.2"
+            ],
+            "details": "Create validation logic to ensure detected patterns apply consistently to all releases in a repository. Check for ambiguous cases where multiple patterns could match the same release. Calculate confidence scores based on pattern consistency and coverage. Reject patterns that don't cover a significant percentage of releases or show inconsistent application. Provide detailed validation reports for debugging.",
+            "status": "pending",
+            "testStrategy": "Test with repositories having mixed naming conventions. Verify rejection of ambiguous patterns and acceptance of consistent ones. Test edge cases with incomplete release histories."
+          },
+          {
+            "id": 5,
+            "title": "Create template validation and testing framework",
+            "description": "Implement comprehensive validation to ensure generated templates are syntactically correct and functional",
+            "dependencies": [
+              "12.3"
+            ],
+            "details": "Build template validation framework that compiles generated templates and tests them with sample version data. Verify templates produce expected release names when executed. Check for syntax errors, missing placeholders, and invalid Go template constructs. Include regression testing to ensure template changes don't break existing functionality. Provide detailed error reporting for template validation failures.",
+            "status": "pending",
+            "testStrategy": "Unit tests for template compilation and execution. Test with malformed templates and edge cases. Verify template output matches expected release names for various version inputs."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Develop asset filename pattern recognition",
+        "description": "Analyze release assets to detect platform-specific filename patterns and generate templates",
+        "details": "Implement asset analysis to detect filename patterns for required platforms (darwin/amd64, darwin/arm64, linux/amd64, linux/arm64). Parse common naming conventions: package-version-platform-arch.ext, package_platform_arch.ext, etc. Handle platform aliases (x86_64/amd64, darwin/macOS). Generate filename templates using detected patterns. Validate that all required platforms have corresponding assets. Fail if patterns are ambiguous or incomplete.",
+        "testStrategy": "Unit tests with various asset naming patterns. Test missing platform scenarios. Verify template generation for different naming conventions. Test platform alias resolution.",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement platform and architecture alias resolution",
+            "description": "Create mapping system to normalize platform and architecture names from various aliases to standardized forms",
+            "dependencies": [],
+            "details": "Build a comprehensive mapping system that converts common platform aliases (darwin/macOS, x86_64/amd64, arm64/aarch64) to standardized names. Create lookup tables for both platforms (darwin, linux, windows) and architectures (amd64, arm64, 386). Handle case-insensitive matching and common variations found in GitHub release assets.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various alias combinations. Test case sensitivity handling. Verify all common GitHub release naming variations are properly normalized."
+          },
+          {
+            "id": 2,
+            "title": "Develop filename pattern extraction engine",
+            "description": "Parse asset filenames to extract version, platform, architecture, and file extension components",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Implement regex-based parsing to extract components from filenames. Handle common patterns: package-version-platform-arch.ext, package_platform_arch_version.ext, version/platform/arch ordering variations. Extract version numbers, platform strings, architecture strings, and file extensions. Create structured data representation of parsed components.",
+            "status": "pending",
+            "testStrategy": "Unit tests with diverse filename patterns from real GitHub releases. Test edge cases like missing components or ambiguous patterns. Verify extraction accuracy across different naming conventions."
+          },
+          {
+            "id": 3,
+            "title": "Build platform coverage validation system",
+            "description": "Verify that all required platforms have corresponding assets in the release",
+            "dependencies": [
+              "13.2"
+            ],
+            "details": "Check that all required platforms (darwin/amd64, darwin/arm64, linux/amd64, linux/arm64) have matching assets. Implement logic to identify missing platforms and report gaps. Handle cases where some platforms may legitimately be missing. Create validation reports showing coverage status for each platform-architecture combination.",
+            "status": "pending",
+            "testStrategy": "Unit tests with complete and incomplete platform coverage scenarios. Test edge cases where only subset of platforms are available. Verify accurate reporting of missing platforms."
+          },
+          {
+            "id": 4,
+            "title": "Generate filename templates from detected patterns",
+            "description": "Create Go template strings based on detected filename patterns for dynamic filename generation",
+            "dependencies": [
+              "13.2",
+              "13.3"
+            ],
+            "details": "Analyze parsed filename components to identify consistent patterns. Generate Go template strings using {{ .Version }} placeholders and platform-specific static components. Handle multiple valid patterns and select the most reliable one. Create templates that can generate filenames for all supported platforms using the same pattern structure.",
+            "status": "pending",
+            "testStrategy": "Unit tests for template generation with various pattern types. Test template execution with different version inputs. Verify generated templates produce correct filenames for all platforms."
+          },
+          {
+            "id": 5,
+            "title": "Implement pattern ambiguity detection and resolution",
+            "description": "Detect when filename patterns are ambiguous or inconsistent and provide clear failure modes",
+            "dependencies": [
+              "13.4"
+            ],
+            "details": "Implement logic to detect ambiguous patterns where multiple valid interpretations exist. Check for inconsistencies across platforms (different naming schemes for different platforms). Provide clear error reporting when patterns cannot be reliably determined. Include heuristics to resolve common ambiguities when possible, but fail safely when patterns are truly ambiguous.",
+            "status": "pending",
+            "testStrategy": "Unit tests with ambiguous filename sets. Test inconsistent cross-platform patterns. Verify clear error messages are generated for unresolvable ambiguities. Test heuristic resolution for borderline cases."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Create version regex generation logic",
+        "description": "Generate appropriate version regex patterns based on detected version schemes",
+        "details": "Analyze version strings to generate appropriate regex patterns. Handle semantic versioning (\\d+\\.\\d+\\.\\d+), versions with pre-release tags (\\d+\\.\\d+\\.\\d+(-\\w+)?), and build metadata. Use Go's regexp package for pattern validation. Ensure generated regex patterns are compatible with grab's version matching system. Implement validation to test regex against known version strings.",
+        "testStrategy": "Unit tests with various version formats including semantic versioning, pre-release, and build metadata. Verify regex pattern generation and validate patterns against sample version strings.",
+        "priority": "medium",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement version scheme detection logic",
+            "description": "Create functions to analyze version strings and detect common patterns like semantic versioning, pre-release tags, and build metadata",
+            "dependencies": [],
+            "details": "Implement functions to parse and categorize version strings. Detect semantic versioning (x.y.z), pre-release versions (x.y.z-alpha), build metadata (x.y.z+build), and other common patterns. Create pattern detection algorithms that can identify the most likely version scheme from a collection of version strings.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various version string samples including semantic versioning, pre-release tags, build metadata, and edge cases. Verify correct pattern detection and categorization."
+          },
+          {
+            "id": 2,
+            "title": "Create regex pattern generation functions",
+            "description": "Implement functions that generate appropriate regex patterns based on detected version schemes",
+            "dependencies": [
+              "14.1"
+            ],
+            "details": "Create pattern generators for different version schemes. For semantic versioning, generate \\d+\\.\\d+\\.\\d+ patterns. For pre-release versions, add optional groups like (-\\w+)?. For build metadata, include (+\\w+)? patterns. Implement flexible pattern builders that can combine multiple elements based on detected schemes.",
+            "status": "pending",
+            "testStrategy": "Unit tests for each pattern generator function. Verify generated regex patterns match expected version formats and don't over-match or under-match valid versions."
+          },
+          {
+            "id": 3,
+            "title": "Implement regex validation and testing",
+            "description": "Create validation logic to test generated regex patterns against known version strings",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "Implement validation functions using Go's regexp package to compile and test generated patterns. Create test functions that validate regex patterns against sample version strings to ensure accuracy. Include edge case testing and pattern optimization to prevent over-broad or too-restrictive matches.",
+            "status": "pending",
+            "testStrategy": "Unit tests for regex compilation and validation. Test with valid and invalid version strings. Verify patterns correctly match target versions and reject invalid formats."
+          },
+          {
+            "id": 4,
+            "title": "Integrate with grab's version matching system",
+            "description": "Ensure generated regex patterns are compatible with existing grab version comparison and matching logic",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": "Review existing grab version handling in pkg/model.go and pkg/updater.go. Ensure generated regex patterns work with existing version comparison logic. Test integration with GitHub release name parsing and version extraction. Verify compatibility with current package definition structures.",
+            "status": "pending",
+            "testStrategy": "Integration tests with existing grab version handling. Test with real GitHub release data. Verify regex patterns work correctly in the full version matching pipeline."
+          },
+          {
+            "id": 5,
+            "title": "Create comprehensive version regex generation API",
+            "description": "Implement the main API functions that tie together detection, generation, and validation into a cohesive version regex generation system",
+            "dependencies": [
+              "14.4"
+            ],
+            "details": "Create main API functions like GenerateVersionRegex() that take version samples and return validated regex patterns. Implement error handling for edge cases and invalid inputs. Add documentation and examples. Ensure the API is ready for integration with the import command's package analysis workflow.",
+            "status": "pending",
+            "testStrategy": "End-to-end tests with complete version regex generation workflow. Test with various GitHub release patterns. Verify API handles edge cases gracefully and produces valid, usable regex patterns."
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Implement program version detection",
+        "description": "Detect appropriate version command arguments and output patterns for binaries",
+        "details": "Implement logic to determine program version detection settings. Try common version arguments: '--version', '-v', 'version'. For each successful response, generate appropriate version regex based on output format. Handle cases where version detection fails or returns ambiguous results. Use the most reliable version argument/regex combination. Implement timeout handling for version command execution.",
+        "testStrategy": "Unit tests for version argument detection logic. Mock binary execution for testing. Test various version output formats and ensure regex generation matches expected patterns.",
+        "priority": "medium",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement version command argument detection",
+            "description": "Create logic to systematically try common version arguments ('--version', '-v', 'version') against binary executables",
+            "dependencies": [],
+            "details": "Implement function to execute binary with each version argument candidate. Handle command execution with proper timeout (5-10 seconds). Capture stdout/stderr output. Track which arguments succeed vs fail. Return successful argument-output pairs for further analysis.",
+            "status": "pending",
+            "testStrategy": "Unit tests with mock binary execution. Test timeout handling and error cases. Verify all common version arguments are attempted."
+          },
+          {
+            "id": 2,
+            "title": "Implement version output pattern analysis",
+            "description": "Analyze version command output to detect version number patterns and generate appropriate regex",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Parse version command output to identify version number patterns. Handle common formats: semantic versioning (1.2.3), prefixed versions (v1.2.3), build metadata (1.2.3-beta+build). Generate regex patterns that reliably extract version numbers. Account for additional text around version numbers.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various version output formats. Test regex generation accuracy and validate generated patterns match expected version strings."
+          },
+          {
+            "id": 3,
+            "title": "Implement version detection reliability scoring",
+            "description": "Create scoring system to rank version argument/regex combinations by reliability",
+            "dependencies": [
+              "15.2"
+            ],
+            "details": "Implement scoring algorithm to evaluate version detection combinations. Score based on: regex specificity, output consistency, argument commonality. Handle ambiguous cases where multiple patterns could match. Select most reliable combination as primary detection method. Provide fallback options for edge cases.",
+            "status": "pending",
+            "testStrategy": "Unit tests for scoring algorithm. Test edge cases with ambiguous version outputs. Verify most reliable combinations are selected correctly."
+          },
+          {
+            "id": 4,
+            "title": "Implement version detection failure handling",
+            "description": "Handle cases where version detection fails or returns ambiguous results",
+            "dependencies": [
+              "15.3"
+            ],
+            "details": "Implement graceful handling when no version arguments work or output is unparseable. Provide clear error messages indicating detection failure. Offer manual configuration options as fallback. Handle cases where binary exists but doesn't support version commands. Log detailed diagnostic information for troubleshooting.",
+            "status": "pending",
+            "testStrategy": "Unit tests for failure scenarios. Test with binaries that don't support version commands. Verify error messages are clear and actionable."
+          },
+          {
+            "id": 5,
+            "title": "Integrate version detection with package configuration",
+            "description": "Connect version detection results to package configuration system",
+            "dependencies": [
+              "15.4"
+            ],
+            "details": "Integrate detected version arguments and regex patterns into package configuration structure. Update package spec to include detected versionArgs and versionRegex fields. Ensure detected settings are properly validated and stored. Handle updates to existing package configurations with new detection results.",
+            "status": "pending",
+            "testStrategy": "Integration tests with package configuration system. Test configuration updates and validation. Verify detected settings work correctly with existing package management logic."
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Create binary path detection and configuration",
+        "description": "Determine embedded binary paths within archives and handle single binary vs multi-binary scenarios",
+        "details": "Implement logic to detect binary paths within archives. Default to package name for single binaries in archive root. For complex archives, analyze common patterns: bin/package-name, package-name/package-name, etc. Handle cases where binary name differs from package name. Create embeddedBinaryPath configuration for each platform when needed. Validate that detected paths are consistent across platforms.",
+        "testStrategy": "Unit tests for binary path detection with various archive structures. Test single binary archives, multi-binary archives, and nested directory structures. Verify path consistency across platforms.",
+        "priority": "medium",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement archive content analysis utilities",
+            "description": "Create functions to analyze archive contents and identify binary files within different archive formats",
+            "dependencies": [],
+            "details": "Implement utility functions to read and analyze archive contents without extracting them. Support tar.gz, tar.xz, zip, and gzip formats. Create functions to list all files in archives, identify executable files, and detect directory structures. Use Go's archive/tar, archive/zip, and compress/gzip packages. Handle cross-platform executable detection (no .exe extension needed for Unix-like systems).",
+            "status": "pending",
+            "testStrategy": "Unit tests with sample archives containing various directory structures. Test single binary archives, nested binaries, and mixed content archives. Verify executable file detection across different platforms."
+          },
+          {
+            "id": 2,
+            "title": "Create binary path pattern detection logic",
+            "description": "Implement logic to detect common binary path patterns within archives based on package name and directory structure",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "Analyze archive contents to detect common patterns like bin/package-name, package-name/package-name, or single binary in root. Create scoring system for path likelihood based on package name matching, directory depth, and common conventions. Handle cases where binary name differs from package name by using fuzzy matching. Implement fallback strategies for ambiguous cases.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various archive structures and package names. Test exact matches, fuzzy matches, and edge cases where binary names don't match package names. Verify pattern scoring and selection logic."
+          },
+          {
+            "id": 3,
+            "title": "Implement embeddedBinaryPath configuration generation",
+            "description": "Generate platform-specific embeddedBinaryPath configuration based on detected binary paths",
+            "dependencies": [
+              "16.2"
+            ],
+            "details": "Create configuration generation logic that produces embeddedBinaryPath entries for each platform combination (darwin/linux, amd64/arm64). Handle cases where paths are consistent across platforms vs platform-specific variations. Default to package name when binary is in archive root. Generate proper YAML-compatible path strings with forward slashes for cross-platform compatibility.",
+            "status": "pending",
+            "testStrategy": "Unit tests for configuration generation with various detected paths. Test platform-specific and universal path configurations. Verify YAML output format and path normalization."
+          },
+          {
+            "id": 4,
+            "title": "Add binary path validation and consistency checks",
+            "description": "Implement validation to ensure detected binary paths are consistent and accessible across all supported platforms",
+            "dependencies": [
+              "16.3"
+            ],
+            "details": "Create validation functions to verify that detected binary paths exist in archives for all platform combinations. Implement consistency checks to flag cases where paths differ unexpectedly between platforms. Add warnings for potentially problematic path configurations. Validate that paths point to executable files and not directories or other file types.",
+            "status": "pending",
+            "testStrategy": "Unit tests for path validation with various archive structures. Test consistency checking across platform combinations. Verify proper error detection and warning generation for problematic configurations."
+          },
+          {
+            "id": 5,
+            "title": "Integrate binary path detection with package specification generation",
+            "description": "Connect binary path detection logic with the main package import workflow and YAML generation",
+            "dependencies": [
+              "16.4"
+            ],
+            "details": "Integrate the binary path detection system with the existing package specification generation workflow. Modify the import process to automatically detect and configure embeddedBinaryPath when creating package specifications. Handle edge cases gracefully and provide fallback options. Ensure the generated YAML includes proper embeddedBinaryPath configuration when needed.",
+            "status": "pending",
+            "testStrategy": "Integration tests for the complete binary path detection and configuration workflow. Test with real GitHub releases containing various archive structures. Verify end-to-end package specification generation with proper binary path configuration."
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Develop package YAML specification generator",
+        "description": "Generate complete package YAML files using detected patterns and configuration",
+        "details": "Create YAML generation logic using grab's package specification format. Combine detected patterns into complete package spec: apiVersion, kind, metadata, spec sections. Use Go's yaml.v3 package for generation. Ensure proper formatting and structure matching existing grab package files. Include all detected patterns: release name, filename templates, version regex, program version settings, and binary paths. Validate generated YAML syntax.",
+        "testStrategy": "Unit tests for YAML generation with various pattern combinations. Validate generated YAML against grab's package schema. Test with real-world pattern detection results.",
+        "priority": "high",
+        "dependencies": [
+          14,
+          15,
+          16
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define YAML package specification structure",
+            "description": "Create Go structs representing the complete grab package YAML specification format",
+            "dependencies": [],
+            "details": "Define structs for PackageSpec with apiVersion, kind, metadata, and spec fields. Include nested structs for GitHubRelease, Program, and platform-specific configurations. Ensure struct tags match YAML field names and support proper serialization with yaml.v3. Include validation tags for required fields.",
+            "status": "pending",
+            "testStrategy": "Unit tests for struct serialization/deserialization. Validate YAML output matches expected format. Test with empty and populated structs."
+          },
+          {
+            "id": 2,
+            "title": "Implement pattern integration logic",
+            "description": "Create functions to combine detected patterns from dependencies into unified package specification",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "Implement logic to merge patterns from release name detection, filename templates, version regex, and binary paths. Handle platform-specific configurations and ensure all required platforms are covered. Create mapping functions to convert detected patterns into YAML struct fields. Validate pattern completeness before generation.",
+            "status": "pending",
+            "testStrategy": "Unit tests with mock pattern detection results. Test various pattern combinations. Verify all platforms are properly configured in output."
+          },
+          {
+            "id": 3,
+            "title": "Build YAML generation engine",
+            "description": "Implement core YAML generation functionality using Go's yaml.v3 package",
+            "dependencies": [
+              "17.1",
+              "17.2"
+            ],
+            "details": "Create generator functions that populate package specification structs and marshal to YAML. Implement proper YAML formatting with consistent indentation and field ordering. Handle optional fields and empty values appropriately. Ensure generated YAML is human-readable and follows grab's package file conventions.",
+            "status": "pending",
+            "testStrategy": "Unit tests for YAML marshaling with various input combinations. Validate output formatting and structure. Test with missing optional fields."
+          },
+          {
+            "id": 4,
+            "title": "Add YAML validation and verification",
+            "description": "Implement validation logic to ensure generated YAML conforms to grab's package schema",
+            "dependencies": [
+              "17.3"
+            ],
+            "details": "Create validation functions to verify generated YAML syntax and semantic correctness. Check required fields are present and properly formatted. Validate version regex patterns, filename templates, and binary paths. Implement schema validation against grab's package specification. Provide detailed error messages for validation failures.",
+            "status": "pending",
+            "testStrategy": "Unit tests for validation logic with valid and invalid YAML. Test edge cases and malformed specifications. Verify error messages are informative."
+          },
+          {
+            "id": 5,
+            "title": "Create package specification output interface",
+            "description": "Develop public API for generating and outputting complete package YAML specifications",
+            "dependencies": [
+              "17.2",
+              "17.4"
+            ],
+            "details": "Create main generator interface that accepts detected patterns and outputs complete YAML. Implement file writing capabilities with proper error handling. Add options for output formatting and validation levels. Ensure interface integrates cleanly with the import command workflow. Support both string output and direct file writing.",
+            "status": "pending",
+            "testStrategy": "Integration tests combining all components. Test with real pattern detection results. Verify generated YAML files can be used by grab install command."
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Implement comprehensive error handling and validation",
+        "description": "Add robust error handling for all failure scenarios with clear, actionable error messages",
+        "details": "Implement comprehensive error handling for all failure scenarios: missing platform assets, ambiguous patterns, API failures, network errors. Create clear, actionable error messages following the PRD specifications. Ensure proper exit codes (0 for success, -1 for failure). Add validation at each step to fail fast when patterns cannot be reliably determined. Include specific details about what was found vs what was required.",
+        "testStrategy": "Unit tests for all error scenarios. Verify exit codes and error message clarity. Test edge cases and ensure graceful failure handling. Validate that error messages provide actionable guidance.",
+        "priority": "high",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement API failure error handling",
+            "description": "Add comprehensive error handling for GitHub API failures including rate limits, network timeouts, and authentication errors",
+            "dependencies": [],
+            "details": "Create error handling for GitHub API calls in pkg/github package. Handle rate limit exceeded (403), network timeouts, DNS resolution failures, authentication errors (401), and server errors (5xx). Implement exponential backoff for retryable errors. Provide clear error messages with actionable guidance like 'Set GH_TOKEN environment variable' for rate limits or 'Check network connection' for network errors.",
+            "status": "pending",
+            "testStrategy": "Unit tests for each API error scenario using mock HTTP responses. Test rate limit handling, timeout behavior, and error message clarity. Verify proper exit codes and retry logic."
+          },
+          {
+            "id": 2,
+            "title": "Add platform asset validation and error handling",
+            "description": "Implement validation for missing platform-specific assets in releases with clear error reporting",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "Add validation logic to check if required platform assets exist in GitHub releases. Handle cases where assets for current platform (darwin/amd64, linux/arm64, etc.) are missing. Provide detailed error messages showing available assets vs required platform. Include suggestions for similar asset names that might work. Validate against embeddedBinaryPath configurations.",
+            "status": "pending",
+            "testStrategy": "Unit tests with mock releases containing various asset combinations. Test missing platform assets, partial platform coverage, and asset name pattern matching. Verify error messages list available assets and provide actionable guidance."
+          },
+          {
+            "id": 3,
+            "title": "Implement pattern ambiguity detection and validation",
+            "description": "Add validation to detect ambiguous patterns in release names and asset matching with fail-fast behavior",
+            "dependencies": [
+              "18.2"
+            ],
+            "details": "Implement pattern validation logic to detect ambiguous release name patterns that could match multiple versions. Add validation for asset filename patterns that return multiple matches. Create clear error messages explaining what patterns were found and why they're ambiguous. Implement fail-fast validation before attempting downloads to prevent partial operations.",
+            "status": "pending",
+            "testStrategy": "Unit tests with ambiguous pattern scenarios. Test cases where multiple assets match the same pattern, release names with irregular versioning, and edge cases with similar but distinct patterns. Verify early validation prevents downstream failures."
+          },
+          {
+            "id": 4,
+            "title": "Add installation and extraction error handling",
+            "description": "Implement comprehensive error handling for package installation, archive extraction, and binary placement failures",
+            "dependencies": [
+              "18.3"
+            ],
+            "details": "Add error handling for archive download failures, extraction errors (corrupted archives, unsupported formats), filesystem permission errors, and binary placement issues. Handle cases where embedded binary paths don't exist in archives. Provide specific error messages about what was expected vs found in archives. Include cleanup of partial installations on failure.",
+            "status": "pending",
+            "testStrategy": "Unit tests for archive extraction failures, permission errors, and missing embedded binaries. Test cleanup behavior on partial installations. Mock filesystem operations to test various failure scenarios and verify error message specificity."
+          },
+          {
+            "id": 5,
+            "title": "Standardize exit codes and error message formatting",
+            "description": "Ensure consistent exit codes (0 success, -1 failure) and standardized error message format across all failure scenarios",
+            "dependencies": [
+              "18.1",
+              "18.2",
+              "18.3",
+              "18.4"
+            ],
+            "details": "Standardize error handling across all commands to use consistent exit codes: 0 for success, -1 for any failure. Create standardized error message format with clear problem description, context about what was attempted, and actionable next steps. Ensure all error paths properly propagate exit codes. Add error categorization for different failure types.",
+            "status": "pending",
+            "testStrategy": "Integration tests verifying exit codes for all error scenarios. Test error message format consistency across different failure types. Verify that all commands properly return -1 on failure and 0 on success. Test error message readability and actionability."
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Create file system integration for package repository",
+        "description": "Implement file writing logic to save generated package specifications to the grab repository directory",
+        "details": "Implement file system operations to write generated YAML files to ~/.grab/repository/{package-name}.yml. Use existing grab configuration system to determine correct repository path. Handle file permissions and directory creation. Implement atomic file writing to prevent corruption. Add validation to ensure write operations succeed. Generate appropriate package names from repository names.",
+        "testStrategy": "Unit tests for file operations including directory creation and atomic writes. Test permission scenarios and error handling. Verify proper file naming and location.",
+        "priority": "medium",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement repository path resolution using grab configuration",
+            "description": "Create function to determine the correct ~/.grab/repository/ path using existing grab configuration system",
+            "dependencies": [],
+            "details": "Implement getRepositoryPath() function that uses grab's existing configuration system to resolve the repository directory path. Should default to ~/.grab/repository/ but respect any configuration overrides. Use filepath.Join for cross-platform compatibility and handle user home directory expansion.",
+            "status": "pending",
+            "testStrategy": "Unit tests for path resolution with different home directories and configuration scenarios. Test cross-platform path handling and configuration override behavior."
+          },
+          {
+            "id": 2,
+            "title": "Create atomic file writing implementation",
+            "description": "Implement atomic file writing to prevent corruption during package specification saves",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "Create writePackageSpecAtomic() function that writes to a temporary file first, then atomically renames to final location. Use ioutil.TempFile in same directory as target to ensure atomic rename works. Include proper cleanup of temporary files on error conditions.",
+            "status": "pending",
+            "testStrategy": "Unit tests for atomic write operations including failure scenarios. Test that partial writes don't corrupt existing files and temporary files are properly cleaned up on errors."
+          },
+          {
+            "id": 3,
+            "title": "Implement directory creation and permission handling",
+            "description": "Create directory structure and handle file permissions for repository directory",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "Implement ensureRepositoryDir() function using os.MkdirAll to create ~/.grab/repository/ if it doesn't exist. Set appropriate permissions (0755 for directories, 0644 for files). Handle permission errors gracefully and provide informative error messages.",
+            "status": "pending",
+            "testStrategy": "Unit tests for directory creation with various permission scenarios. Test behavior when directory already exists, when parent directories need creation, and when permission is denied."
+          },
+          {
+            "id": 4,
+            "title": "Create package name generation from repository names",
+            "description": "Generate appropriate package names from GitHub repository names for file naming",
+            "dependencies": [],
+            "details": "Implement generatePackageName() function that converts GitHub repository names to valid package names. Handle special characters, normalize to lowercase, and ensure compatibility with grab's naming conventions. Consider prefix/suffix patterns and collision handling.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various repository name formats including special characters, uppercase, and edge cases. Verify generated names are valid filenames and follow grab conventions."
+          },
+          {
+            "id": 5,
+            "title": "Implement complete file writing integration with validation",
+            "description": "Integrate all file system components and add validation for successful write operations",
+            "dependencies": [
+              "19.2",
+              "19.3",
+              "19.4"
+            ],
+            "details": "Create writePackageSpecification() function that combines path resolution, atomic writing, and validation. Verify written files can be read back and parsed as valid YAML. Add error handling for disk space, permissions, and I/O errors with appropriate user feedback.",
+            "status": "pending",
+            "testStrategy": "Integration tests for complete write operation including validation. Test error scenarios like insufficient disk space, permission issues, and malformed YAML. Verify successful round-trip read/write operations."
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "title": "Add integration testing and end-to-end validation",
+        "description": "Create comprehensive integration tests using real GitHub repositories and validate complete workflow",
+        "details": "Create integration tests using real GitHub repositories known to work well with grab import (boyter/scc, cli/cli). Test complete end-to-end workflow from URL input to YAML file generation. Validate generated package specifications actually work with grab install. Create test cases for known failure scenarios. Implement CI-friendly tests that don't depend on external network when possible. Add performance benchmarks to ensure <5 second execution time requirement.",
+        "testStrategy": "Integration tests with real GitHub repositories. End-to-end workflow validation. Performance testing to meet timing requirements. Validate generated specs work with existing grab functionality.",
+        "priority": "medium",
+        "dependencies": [
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up integration test infrastructure and test data",
+            "description": "Create integration test package structure and configure test repositories for real GitHub API testing",
+            "dependencies": [],
+            "details": "Create integration_test.go in appropriate package directory. Set up test configuration for known stable repositories (boyter/scc, cli/cli) that work well with grab import. Configure test environment variables for GitHub token if available. Create helper functions for test repository data and expected package specifications. Set up CI-friendly mocking fallbacks when network is unavailable.",
+            "status": "pending",
+            "testStrategy": "Verify test infrastructure can connect to GitHub API and retrieve real repository data. Test fallback behavior when network is unavailable."
+          },
+          {
+            "id": 2,
+            "title": "Implement end-to-end workflow validation tests",
+            "description": "Create comprehensive tests that validate complete import workflow from URL input to YAML generation",
+            "dependencies": [
+              "20.1"
+            ],
+            "details": "Test complete workflow: URL parsing -> GitHub API calls -> release detection -> asset analysis -> YAML generation. Validate that generated package specifications contain correct GitHub org/repo, release name patterns, version regex, and file name templates. Test multiple repository types and release patterns. Ensure generated YAML matches expected structure and field values.",
+            "status": "pending",
+            "testStrategy": "End-to-end tests with real GitHub repositories. Compare generated YAML against expected package specifications. Verify all required fields are populated correctly."
+          },
+          {
+            "id": 3,
+            "title": "Add grab install compatibility validation",
+            "description": "Verify that generated package specifications actually work with existing grab install functionality",
+            "dependencies": [
+              "20.2"
+            ],
+            "details": "Create tests that take generated package YAML and validate it works with grab's existing install command. Test package definition parsing, URL template resolution, and asset downloading logic. Verify that embedded binary paths are correctly detected and configured. Test cross-platform compatibility for generated specifications.",
+            "status": "pending",
+            "testStrategy": "Integration tests that use generated package specs with grab install workflow. Mock or use test binaries to verify complete installation process without actually downloading large files."
+          },
+          {
+            "id": 4,
+            "title": "Implement failure scenario test cases",
+            "description": "Create test cases for known failure scenarios and error conditions",
+            "dependencies": [
+              "20.2"
+            ],
+            "details": "Test error handling for: invalid GitHub URLs, repositories without releases, unsupported asset formats, network failures, API rate limiting, private repositories, and malformed release data. Verify appropriate error messages are returned and no partial state is created. Test timeout scenarios and resource cleanup.",
+            "status": "pending",
+            "testStrategy": "Negative test cases with controlled failure conditions. Verify error messages are descriptive and actionable. Test graceful degradation and cleanup behavior."
+          },
+          {
+            "id": 5,
+            "title": "Add performance benchmarks and timing validation",
+            "description": "Implement performance testing to ensure import command meets <5 second execution requirement",
+            "dependencies": [
+              "20.3"
+            ],
+            "details": "Create benchmark tests using Go's testing.B framework to measure import command performance. Test with various repository sizes and release counts. Implement timing assertions to verify <5 second requirement. Add profiling capabilities to identify performance bottlenecks. Test performance with and without GitHub API rate limiting. Create performance regression detection.",
+            "status": "pending",
+            "testStrategy": "Benchmark tests with timing assertions. Performance profiling to identify bottlenecks. Regression testing to ensure performance doesn't degrade over time."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-07-22T14:08:00.822Z",
-      "updated": "2025-07-26T12:56:13.860Z",
+      "updated": "2025-07-27T21:20:20.321Z",
       "description": "Tasks for master context"
     }
   }

@@ -17,36 +17,36 @@ type configRoot struct {
 }
 
 type repository struct {
-	Packages []*configPackage
+	Packages []*ConfigPackage
 }
 
-type configPackage struct {
+type ConfigPackage struct {
 	APIVersion string                `yaml:"apiVersion"`
 	Kind       string                `yaml:"kind"`
-	Metadata   configPackageMetadata `yaml:"metadata"`
-	Spec       configPackageSpec     `yaml:"spec"`
+	Metadata   ConfigPackageMetadata `yaml:"metadata"`
+	Spec       ConfigPackageSpec     `yaml:"spec"`
 }
 
-type configPackageMetadata struct {
+type ConfigPackageMetadata struct {
 	Name string `yaml:"name"`
 }
 
-type configPackageSpec struct {
-	GitHubRelease configGitHubRelease `yaml:"gitHubRelease"`
-	Program       configProgram       `yaml:"program"`
+type ConfigPackageSpec struct {
+	GitHubRelease ConfigGitHubRelease `yaml:"gitHubRelease"`
+	Program       ConfigProgram       `yaml:"program"`
 }
 
-type configGitHubRelease struct {
+type ConfigGitHubRelease struct {
 	Org                string            `yaml:"org"`
 	Repo               string            `yaml:"repo"`
 	Name               string            `yaml:"name"`
 	VersionRegex       string            `yaml:"versionRegex"`
 	FileName           map[string]string `yaml:"fileName"`
-	EmbeddedBinaryPath map[string]string `yaml:"embeddedBinaryPath"`
+	EmbeddedBinaryPath map[string]string `yaml:"embeddedBinaryPath,omitempty"`
 }
 
-type configProgram struct {
-	VersionArgs  []string `yaml:"versionArgs"`
+type ConfigProgram struct {
+	VersionArgs  []string `yaml:"versionArgs,flow"`
 	VersionRegex string   `yaml:"versionRegex"`
 }
 
@@ -103,7 +103,7 @@ func saveConfig(config *configRoot, path string) error {
 	return nil
 }
 
-func loadPackage(path string) (*configPackage, error) {
+func loadPackage(path string) (*ConfigPackage, error) {
 	slog.Info("Loading package config from disk", "path", path)
 
 	data, err := os.ReadFile(path)
@@ -113,7 +113,7 @@ func loadPackage(path string) (*configPackage, error) {
 
 	slog.Debug("Loaded package config from disk", "content", string(data))
 
-	output := configPackage{}
+	output := ConfigPackage{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
 
@@ -125,10 +125,35 @@ func loadPackage(path string) (*configPackage, error) {
 	return &output, nil
 }
 
+func savePackage(packageConfig *ConfigPackage, path string) error {
+	slog.Info("Saving package config to disk", "path", path)
+
+	var buf bytes.Buffer
+
+	yamlEncoder := yaml.NewEncoder(&buf)
+	yamlEncoder.SetIndent(2) //nolint:mnd
+
+	err := yamlEncoder.Encode(packageConfig)
+	if err != nil {
+		return fmt.Errorf("error serializing package config: %w", err)
+	}
+
+	data := buf.Bytes()
+
+	slog.Debug("Writing package config to disk", "content", string(data))
+
+	err = os.WriteFile(path, data, 0o644) //nolint:gosec,mnd
+	if err != nil {
+		return fmt.Errorf("error writing package config: %w", err)
+	}
+
+	return nil
+}
+
 func loadRepository(repoPath string) (*repository, error) {
 	slog.Info("Loading packages from repository on disk", "repoPath", repoPath)
 
-	packages := []*configPackage{}
+	packages := []*ConfigPackage{}
 
 	err := filepath.Walk(repoPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {

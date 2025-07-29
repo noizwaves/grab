@@ -12,11 +12,18 @@ type MockGitHubClient struct {
 
 	// Call tracking
 	GetLatestReleaseCalls []GetLatestReleaseCall
+	GetReleaseByTagCalls  []GetReleaseByTagCall
 }
 
 type GetLatestReleaseCall struct {
 	Org  string
 	Repo string
+}
+
+type GetReleaseByTagCall struct {
+	Org  string
+	Repo string
+	Tag  string
 }
 
 func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, _ string) ([]byte, error) {
@@ -32,6 +39,21 @@ func (m *MockGitHubClient) GetLatestRelease(org, repo string) (*github.Release, 
 	m.GetLatestReleaseCalls = append(m.GetLatestReleaseCalls, GetLatestReleaseCall{
 		Org:  org,
 		Repo: repo,
+	})
+
+	if m.Release == nil {
+		return nil, errors.New("not implemented")
+	}
+
+	return m.Release, nil
+}
+
+func (m *MockGitHubClient) GetReleaseByTag(org, repo, tag string) (*github.Release, error) {
+	// Track the call
+	m.GetReleaseByTagCalls = append(m.GetReleaseByTagCalls, GetReleaseByTagCall{
+		Org:  org,
+		Repo: repo,
+		Tag:  tag,
 	})
 
 	if m.Release == nil {

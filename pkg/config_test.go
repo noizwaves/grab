@@ -13,15 +13,15 @@ func TestLoadRepositoryValid(t *testing.T) {
 	actual, err := loadRepository("testdata/repository/valid")
 
 	expected := &repository{
-		Packages: []*configPackage{
+		Packages: []*ConfigPackage{
 			{
 				APIVersion: "grab.noizwaves.com/v1alpha1",
 				Kind:       "Package",
-				Metadata: configPackageMetadata{
+				Metadata: ConfigPackageMetadata{
 					Name: "bar",
 				},
-				Spec: configPackageSpec{
-					GitHubRelease: configGitHubRelease{
+				Spec: ConfigPackageSpec{
+					GitHubRelease: ConfigGitHubRelease{
 						Org:          "foo",
 						Repo:         "bar",
 						Name:         "{{ .Version }}",
@@ -34,7 +34,7 @@ func TestLoadRepositoryValid(t *testing.T) {
 						},
 						EmbeddedBinaryPath: nil,
 					},
-					Program: configProgram{
+					Program: ConfigProgram{
 						VersionArgs:  []string{"--version"},
 						VersionRegex: "\\d+\\.\\d+\\.\\d+",
 					},
@@ -43,11 +43,11 @@ func TestLoadRepositoryValid(t *testing.T) {
 			{
 				APIVersion: "grab.noizwaves.com/v1alpha1",
 				Kind:       "Package",
-				Metadata: configPackageMetadata{
+				Metadata: ConfigPackageMetadata{
 					Name: "baz",
 				},
-				Spec: configPackageSpec{
-					GitHubRelease: configGitHubRelease{
+				Spec: ConfigPackageSpec{
+					GitHubRelease: ConfigGitHubRelease{
 						Org:          "foo",
 						Repo:         "baz",
 						Name:         "v{{ .Version }}",
@@ -65,7 +65,7 @@ func TestLoadRepositoryValid(t *testing.T) {
 							"linux,arm64":  "aarch64-unknown-linux-gnu/baz",
 						},
 					},
-					Program: configProgram{
+					Program: ConfigProgram{
 						VersionArgs:  []string{"version"},
 						VersionRegex: "\\d+\\.\\d+\\.\\d+",
 					},
