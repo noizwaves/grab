@@ -4,7 +4,7 @@ package github
 type Release struct {
 	Name    string  `json:"name"`
 	URL     string  `json:"html_url"` //nolint:tagliatelle
-	TagName string  `json:"tag_name"`
+	TagName string  `json:"tag_name"` //nolint:tagliatelle
 	Assets  []Asset `json:"assets"`
 }
 

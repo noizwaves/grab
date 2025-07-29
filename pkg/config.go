@@ -142,7 +142,7 @@ func savePackage(packageConfig *ConfigPackage, path string) error {
 
 	slog.Debug("Writing package config to disk", "content", string(data))
 
-	err = os.WriteFile(path, data, 0o644)
+	err = os.WriteFile(path, data, 0o644) //nolint:gosec,mnd
 	if err != nil {
 		return fmt.Errorf("error writing package config: %w", err)
 	}

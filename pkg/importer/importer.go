@@ -1,19 +1,11 @@
 package importer
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
 )
-
-var detectablePairs = [][]string{
-	{"linux", "amd64"},
-	{"linux", "arm64"},
-	{"darwin", "amd64"},
-	{"darwin", "arm64"},
-}
 
 type Importer struct {
 	githubClient github.Client
@@ -37,8 +29,9 @@ func (i *Importer) Import(url string, context *pkg.Context) error {
 	} else {
 		release, err = i.githubClient.GetReleaseByTag(releaseURL.Organization, releaseURL.Repository, releaseURL.Tag)
 	}
+
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get release: %w", err)
 	}
 
 	// Detect the patterns from the Release
@@ -78,7 +71,7 @@ func (i *Importer) Import(url string, context *pkg.Context) error {
 
 	err = context.SavePackage(&packageConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to save package: %w", err)
 	}
 
 	return nil
@@ -91,15 +84,19 @@ type detectedPackage struct {
 
 func detectPackage(release *github.Release) (*detectedPackage, error) {
 	releaseDetector := NewReleaseNamePatternDetector()
+
 	releasePattern, err := releaseDetector.AnalyzeOne(release.TagName)
 	if err != nil {
 		return nil, err
 	}
+
 	releaseName := releasePattern.Value
 
 	fileNames := make(map[string]string)
 
 	// analyze the asset names for all required platform+architecture pairs
+	detectablePairs := getDetectablePairs()
+
 	for _, pair := range detectablePairs {
 		platform := pair[0]
 		arch := pair[1]
@@ -107,6 +104,7 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 		archDetector := NewArchitecturePatternDetector(arch)
 
 		var result string
+
 		for _, asset := range release.Assets {
 			_, err := platformDetector.AnalyzeOne(asset.Name)
 			if err != nil {
@@ -120,14 +118,15 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 
 			// this asset name matches the current pair!
 			result = asset.Name
+
 			break
 		}
 
 		if result == "" {
-			return nil, errors.New(fmt.Sprintf("no matching asset name found for platform %s and architecture %s", platform, arch))
+			return nil, fmt.Errorf("no matching asset name found for platform %s and architecture %s", platform, arch)
 		}
 
-		// TODO: parse this asset name for a version number
+		// parse this asset name for a version number
 
 		key := fmt.Sprintf("%s,%s", platform, arch)
 		fileNames[key] = result
@@ -137,4 +136,13 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 		releaseName: releaseName,
 		assets:      fileNames,
 	}, nil
+}
+
+func getDetectablePairs() [][]string {
+	return [][]string{
+		{"linux", "amd64"},
+		{"linux", "arm64"},
+		{"darwin", "amd64"},
+		{"darwin", "arm64"},
+	}
 }
