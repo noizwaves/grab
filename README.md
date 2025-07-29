@@ -50,6 +50,12 @@ go build -o ~/.local/bin/grab main.go
     /home/adam/.local/bin/fzf
     ```
 
+### Adding new packages
+
+The `grab import <url>` command can be used to automatically import GitHub releases into the local repository.
+
+Packages can be defined manually by editing package YML files at `~/.grab/repository/*.yml`.
+
 ### Updating versions
 
 1.  Run `grab update` to update the config file with the latest upstream versions.
