@@ -23,6 +23,13 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      - path: _test\.go$
+        linters:
+          - funlen
+          - errcheck
+          - gosec
+          - dupl
 formatters:
   enable:
     - gci

@@ -23,7 +23,6 @@ func TestParseGitHubReleaseURL(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func getParseTestCases() []struct {
 	name    string
 	url     string
