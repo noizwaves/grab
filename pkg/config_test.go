@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:funlen
 func TestLoadRepositoryValid(t *testing.T) {
 	actual, err := loadRepository("testdata/repository/valid")
 

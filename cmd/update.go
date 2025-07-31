@@ -11,8 +11,14 @@ import (
 
 func makeUpdateCommand() *cobra.Command {
 	updateCmd := &cobra.Command{
-		Use:          "update [package-name]",
-		Short:        "Updates packages to use latest remote version",
+		Use:   "update [PACKAGE_NAME]",
+		Short: "Updates packages to use latest remote version",
+		Long: `
+Updates packages to use latest remote version. Defaults to updating all packages.
+
+Arguments:
+  PACKAGE_NAME (optional): Name of the package to update (e.g., "fzf")
+`,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		PreRun: func(_ *cobra.Command, _ []string) {

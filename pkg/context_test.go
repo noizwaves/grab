@@ -21,7 +21,7 @@ func makeEmptyConfig(t *testing.T) string {
 
 	emptyConfig := []byte(`packages: {}`)
 
-	err = os.WriteFile(path.Join(dir, ".grab", "config.yml"), emptyConfig, 0o644) //nolint:gosec
+	err = os.WriteFile(path.Join(dir, ".grab", "config.yml"), emptyConfig, 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}

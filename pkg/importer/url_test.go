@@ -23,7 +23,6 @@ func TestParseGitHubReleaseURL(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func getParseTestCases() []struct {
 	name    string
 	url     string
@@ -37,62 +36,44 @@ func getParseTestCases() []struct {
 		wantErr bool
 	}{
 		{
-			name: "valid tag release URL",
+			name: "basic GitHub URL",
+			url:  "https://github.com/boyter/scc",
+			want: &GitHubReleaseURL{
+				Organization: "boyter",
+				Repository:   "scc",
+				Original:     "https://github.com/boyter/scc",
+			},
+			wantErr: false,
+		},
+		{
+			name: "GitHub URL with path",
 			url:  "https://github.com/boyter/scc/releases/tag/v3.5.0",
 			want: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
-				Tag:          "v3.5.0",
-				IsLatest:     false,
 				Original:     "https://github.com/boyter/scc/releases/tag/v3.5.0",
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid latest release URL",
-			url:  "https://github.com/boyter/scc/releases/latest",
+			name: "GitHub URL with issues path",
+			url:  "https://github.com/boyter/scc/issues",
 			want: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
-				Tag:          "",
-				IsLatest:     true,
-				Original:     "https://github.com/boyter/scc/releases/latest",
+				Original:     "https://github.com/boyter/scc/issues",
 			},
 			wantErr: false,
 		},
 		{
-			name: "tag without version prefix",
-			url:  "https://github.com/example/repo/releases/tag/1.2.3",
+			name: "GitHub URL with trailing slash",
+			url:  "https://github.com/example/repo/",
 			want: &GitHubReleaseURL{
 				Organization: "example",
 				Repository:   "repo",
-				Tag:          "1.2.3",
-				IsLatest:     false,
-				Original:     "https://github.com/example/repo/releases/tag/1.2.3",
+				Original:     "https://github.com/example/repo/",
 			},
 			wantErr: false,
-		},
-		{
-			name: "direct version format",
-			url:  "https://github.com/boyter/scc/releases/v3.5.0",
-			want: &GitHubReleaseURL{
-				Organization: "boyter",
-				Repository:   "scc",
-				Tag:          "v3.5.0",
-				IsLatest:     false,
-				Original:     "https://github.com/boyter/scc/releases/v3.5.0",
-			},
-			wantErr: false,
-		},
-		{
-			name:    "missing tag version",
-			url:     "https://github.com/boyter/scc/releases/tag",
-			wantErr: true,
-		},
-		{
-			name:    "non-releases URL",
-			url:     "https://github.com/boyter/scc/issues",
-			wantErr: true,
 		},
 		{
 			name:    "insufficient path components",
@@ -106,17 +87,17 @@ func getParseTestCases() []struct {
 		},
 		{
 			name:    "HTTP scheme not allowed",
-			url:     "http://github.com/boyter/scc/releases/tag/v3.5.0",
+			url:     "http://github.com/boyter/scc",
 			wantErr: true,
 		},
 		{
 			name:    "non-GitHub domain",
-			url:     "https://gitlab.com/boyter/scc/releases/tag/v3.5.0",
+			url:     "https://gitlab.com/boyter/scc",
 			wantErr: true,
 		},
 		{
 			name:    "GitHub subdomain not allowed",
-			url:     "https://api.github.com/boyter/scc/releases/tag/v3.5.0",
+			url:     "https://api.github.com/boyter/scc",
 			wantErr: true,
 		},
 	}
@@ -133,14 +114,6 @@ func validateParseResult(t *testing.T, got, want *GitHubReleaseURL) {
 		t.Errorf("ParseGitHubReleaseURL() Repository = %v, want %v", got.Repository, want.Repository)
 	}
 
-	if got.Tag != want.Tag {
-		t.Errorf("ParseGitHubReleaseURL() Tag = %v, want %v", got.Tag, want.Tag)
-	}
-
-	if got.IsLatest != want.IsLatest {
-		t.Errorf("ParseGitHubReleaseURL() IsLatest = %v, want %v", got.IsLatest, want.IsLatest)
-	}
-
 	if got.Original != want.Original {
 		t.Errorf("ParseGitHubReleaseURL() Original = %v, want %v", got.Original, want.Original)
 	}
@@ -153,23 +126,20 @@ func TestGitHubReleaseURL_String(t *testing.T) {
 		want string
 	}{
 		{
-			name: "tag release",
+			name: "basic URL",
 			url: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
-				Tag:          "v3.5.0",
-				IsLatest:     false,
 			},
-			want: "boyter/scc@v3.5.0",
+			want: "boyter/scc",
 		},
 		{
-			name: "latest release",
+			name: "another URL",
 			url: &GitHubReleaseURL{
-				Organization: "boyter",
-				Repository:   "scc",
-				IsLatest:     true,
+				Organization: "example",
+				Repository:   "repo",
 			},
-			want: "boyter/scc (latest)",
+			want: "example/repo",
 		},
 	}
 
@@ -189,21 +159,10 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name: "valid tag release",
+			name: "valid URL",
 			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
 				Repository:   "scc",
-				Tag:          "v3.5.0",
-				IsLatest:     false,
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid latest release",
-			releaseURL: &GitHubReleaseURL{
-				Organization: "boyter",
-				Repository:   "scc",
-				IsLatest:     true,
 			},
 			wantErr: false,
 		},
@@ -211,7 +170,6 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 			name: "missing organization",
 			releaseURL: &GitHubReleaseURL{
 				Repository: "scc",
-				Tag:        "v3.5.0",
 			},
 			wantErr: true,
 		},
@@ -219,16 +177,6 @@ func TestGitHubReleaseURL_Validate(t *testing.T) {
 			name: "missing repository",
 			releaseURL: &GitHubReleaseURL{
 				Organization: "boyter",
-				Tag:          "v3.5.0",
-			},
-			wantErr: true,
-		},
-		{
-			name: "missing tag for non-latest",
-			releaseURL: &GitHubReleaseURL{
-				Organization: "boyter",
-				Repository:   "scc",
-				IsLatest:     false,
 			},
 			wantErr: true,
 		},
