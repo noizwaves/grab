@@ -16,7 +16,7 @@ func TestInstall(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	context, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestInstall_SelectivePackage(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/multiple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	context, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestInstall_SelectivePackage_PackageNotFound(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/multiple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	context, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}

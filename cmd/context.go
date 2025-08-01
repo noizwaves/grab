@@ -5,9 +5,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newContext() (*pkg.Context, error) {
+func newContext() (*pkg.GrabContext, error) {
 	configPath := viper.GetString("config-path")
 	binPath := viper.GetString("bin-path")
 
-	return pkg.NewContext(configPath, binPath) //nolint:wrapcheck
+	return pkg.NewGrabContext(configPath, binPath) //nolint:wrapcheck
 }

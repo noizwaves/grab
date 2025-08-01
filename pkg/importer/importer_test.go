@@ -15,7 +15,7 @@ import (
 func TestImport_Success_LatestRelease(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	context, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestImport_Success_LatestRelease(t *testing.T) {
 func TestImport_Success_TaggedRelease(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	context, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestImport_Success_TaggedRelease(t *testing.T) {
 func TestImport_Error_InvalidURL(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	context, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestImport_Error_InvalidURL(t *testing.T) {
 func TestImport_Error_GitHubAPIFailure(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	context, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestImport_Error_GitHubAPIFailure(t *testing.T) {
 func TestImport_Error_NoMatchingAssets(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	context, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

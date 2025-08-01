@@ -20,7 +20,7 @@ func NewImporter(githubClient github.Client) *Importer {
 	}
 }
 
-func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error {
+func (i *Importer) Import(context *pkg.GrabContext, url string, out io.Writer) error {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
 		return err

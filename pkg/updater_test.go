@@ -16,7 +16,7 @@ import (
 func TestUpdate(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestUpdate(t *testing.T) {
 func TestUpdateValidPackageName(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestUpdateValidPackageName(t *testing.T) {
 func TestUpdateInvalidPackageName(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestUpdateInvalidPackageName(t *testing.T) {
 func TestUpdateSinglePackageIgnoresOthers(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/multiple")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestUpdateSinglePackageIgnoresOthers(t *testing.T) {
 func TestUpdatePackageAlreadyLatest(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestUpdatePackageAlreadyLatest(t *testing.T) {
 func TestUpdateNoPackagesConfigured(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/empty")
 
-	context, err := NewContext(configDir, t.TempDir())
+	context, err := NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

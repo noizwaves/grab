@@ -20,7 +20,7 @@ const (
 	repositoryDirName = "repository"
 )
 
-type Context struct {
+type GrabContext struct {
 	Binaries     []*Binary
 	BinPath      string
 	ConfigPath   string
@@ -30,7 +30,7 @@ type Context struct {
 	Architecture string
 }
 
-func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
+func NewGrabContext(configPathOverride, binPathOverride string) (*GrabContext, error) {
 	ctx := context.Background()
 	slog.DebugContext(ctx, "Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
@@ -74,7 +74,7 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 		binaries = append(binaries, binary)
 	}
 
-	return &Context{
+	return &GrabContext{
 		Binaries:     binaries,
 		BinPath:      binPath,
 		ConfigPath:   configFilePath,
@@ -85,8 +85,8 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 	}, err
 }
 
-func (c *Context) EnsureBinPathExists() error {
-	err := os.MkdirAll(c.BinPath, 0o755) //nolint:mnd
+func (gc *GrabContext) EnsureBinPathExists() error {
+	err := os.MkdirAll(gc.BinPath, 0o755) //nolint:mnd
 	if err != nil {
 		return fmt.Errorf("error creating bin path directory: %w", err)
 	}
@@ -94,8 +94,8 @@ func (c *Context) EnsureBinPathExists() error {
 	return nil
 }
 
-func (c *Context) SavePackage(packageConfig *ConfigPackage) (string, error) {
-	packagePath := path.Join(c.RepoPath, packageConfig.Metadata.Name+".yml")
+func (gc *GrabContext) SavePackage(packageConfig *ConfigPackage) (string, error) {
+	packagePath := path.Join(gc.RepoPath, packageConfig.Metadata.Name+".yml")
 
 	err := savePackage(packageConfig, packagePath)
 	if err != nil {

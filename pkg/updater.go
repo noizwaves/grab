@@ -13,7 +13,7 @@ type Updater struct {
 	GitHubClient github.Client
 }
 
-func (u *Updater) Update(context *Context, packageName string, out io.Writer) error {
+func (u *Updater) Update(context *GrabContext, packageName string, out io.Writer) error {
 	ctx := stdcontext.Background()
 	// Validate package name if specified
 	if packageName != "" {

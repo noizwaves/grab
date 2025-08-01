@@ -19,7 +19,7 @@ type Installer struct {
 	GitHubClient github.Client
 }
 
-func (i *Installer) Install(context *Context, packageName string, out io.Writer) error {
+func (i *Installer) Install(context *GrabContext, packageName string, out io.Writer) error {
 	ctx := stdcontext.Background()
 	if packageName != "" {
 		slog.InfoContext(ctx, "Installing specific package", "package", packageName)
@@ -47,7 +47,7 @@ func (i *Installer) Install(context *Context, packageName string, out io.Writer)
 	return nil
 }
 
-func (i *Installer) getBinariesToProcess(context *Context, packageName string) ([]*Binary, error) {
+func (i *Installer) getBinariesToProcess(context *GrabContext, packageName string) ([]*Binary, error) {
 	if packageName != "" {
 		foundBinary := i.findBinaryByName(context.Binaries, packageName)
 		if foundBinary == nil {
@@ -70,7 +70,7 @@ func (i *Installer) findBinaryByName(binaries []*Binary, packageName string) *Bi
 	return nil
 }
 
-func (i *Installer) installBinary(context *Context, binary *Binary, out io.Writer) error {
+func (i *Installer) installBinary(context *GrabContext, binary *Binary, out io.Writer) error {
 	destPath := path.Join(context.BinPath, binary.Name)
 
 	// if destination file exists
@@ -107,7 +107,7 @@ func (i *Installer) installBinary(context *Context, binary *Binary, out io.Write
 	return nil
 }
 
-func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) ([]byte, error) {
+func fetchExecutable(ghClient github.Client, context *GrabContext, binary *Binary) ([]byte, error) {
 	ctx := stdcontext.Background()
 	slog.InfoContext(ctx, "Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
 
