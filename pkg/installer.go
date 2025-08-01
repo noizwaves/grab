@@ -41,6 +41,7 @@ func (i *Installer) Install(context *Context, packageName string, out io.Writer)
 			return err
 		}
 	}
+
 	return nil
 }
 
