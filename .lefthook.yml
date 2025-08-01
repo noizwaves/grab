@@ -7,6 +7,10 @@ pre-commit:
       glob: "*.go"
       run: golangci-lint run ./...
 
+fix:
+  jobs:
+    - run: golangci-lint run --fix ./...
+
 skip_output:
   - meta
   - summary

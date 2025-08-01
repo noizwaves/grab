@@ -18,47 +18,89 @@ type Installer struct {
 	GitHubClient github.Client
 }
 
-func (i *Installer) Install(context *Context, out io.Writer) error {
-	slog.Info("Installing configured packages")
+func (i *Installer) Install(context *Context, packageName string, out io.Writer) error {
+	if packageName != "" {
+		slog.Info("Installing specific package", "package", packageName)
+	} else {
+		slog.Info("Installing configured packages")
+	}
 
 	err := context.EnsureBinPathExists()
 	if err != nil {
 		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
 	}
 
-	for _, binary := range context.Binaries {
-		destPath := path.Join(context.BinPath, binary.Name)
-		// if destination file exists
-		_, err := os.Stat(destPath)
-		if err == nil {
-			currentVersion, err := getCurrentVersion(destPath, binary)
-			if err != nil {
-				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
-			}
+	binariesToProcess, err := i.getBinariesToProcess(context, packageName)
+	if err != nil {
+		return err
+	}
 
-			if binary.ShouldReplace(currentVersion) {
-				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.PinnedVersion, currentVersion)
-			} else {
-				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
-
-				continue
-			}
-		} else {
-			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
-		}
-
-		data, err := fetchExecutable(i.GitHubClient, context, binary)
-		if err != nil {
-			return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
-		}
-
-		err = writeToDisk(binary, &data, destPath)
+	for _, binary := range binariesToProcess {
+		err := i.installBinary(context, binary, out)
 		if err != nil {
 			return err
 		}
-
-		fmt.Fprintln(out, " Done!")
 	}
+
+	return nil
+}
+
+func (i *Installer) getBinariesToProcess(context *Context, packageName string) ([]*Binary, error) {
+	if packageName != "" {
+		foundBinary := i.findBinaryByName(context.Binaries, packageName)
+		if foundBinary == nil {
+			return nil, errors.New("package definition for " + packageName + " not found")
+		}
+
+		return []*Binary{foundBinary}, nil
+	}
+
+	return context.Binaries, nil
+}
+
+func (i *Installer) findBinaryByName(binaries []*Binary, packageName string) *Binary {
+	for _, binary := range binaries {
+		if binary.Name == packageName {
+			return binary
+		}
+	}
+
+	return nil
+}
+
+func (i *Installer) installBinary(context *Context, binary *Binary, out io.Writer) error {
+	destPath := path.Join(context.BinPath, binary.Name)
+
+	// if destination file exists
+	_, err := os.Stat(destPath)
+	if err == nil {
+		currentVersion, err := getCurrentVersion(destPath, binary)
+		if err != nil {
+			return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
+		}
+
+		if binary.ShouldReplace(currentVersion) {
+			fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.PinnedVersion, currentVersion)
+		} else {
+			fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
+
+			return nil
+		}
+	} else {
+		fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
+	}
+
+	data, err := fetchExecutable(i.GitHubClient, context, binary)
+	if err != nil {
+		return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
+	}
+
+	err = writeToDisk(binary, &data, destPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(out, " Done!")
 
 	return nil
 }

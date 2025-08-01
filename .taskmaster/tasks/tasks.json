@@ -1039,11 +1039,336 @@
             "testStrategy": "Benchmark tests with timing assertions. Performance profiling to identify bottlenecks. Regression testing to ensure performance doesn't degrade over time."
           }
         ]
+      },
+      {
+        "id": 21,
+        "title": "Set up comprehensive test infrastructure for TDD workflow",
+        "description": "Create mock interfaces, test helpers, and testing infrastructure to support Test-Driven Development for the selective package installation feature",
+        "details": "Extend existing test infrastructure in pkg/internal/ to support TDD development. Create comprehensive mocks for GitHub API client, file system operations, and network operations. Set up test data including sample config files, repository definitions, and mock GitHub API responses. Extend pkg/internal/assert/ with new test helpers specific to installation workflows. Create test fixtures for various package configurations and error scenarios. Implement mock interfaces that match the existing github.Client interface pattern. Set up deterministic test environments that don't rely on external dependencies. Use testify/mock framework following existing patterns in the codebase.",
+        "testStrategy": "Unit tests for all mock interfaces, integration tests for test helper functions, validation tests for test data fixtures, and smoke tests to ensure test infrastructure doesn't break existing test suite",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create comprehensive mock interfaces for GitHub API client",
+            "description": "Implement mock interfaces that match the existing github.Client interface pattern to support testing without external API dependencies",
+            "dependencies": [],
+            "details": "Create MockGitHubClient in pkg/internal/mocks/ that implements all methods from github.Client interface. Include methods for GetLatestRelease, GetReleases, and any other GitHub API operations. Use testify/mock framework following existing patterns. Ensure mock can simulate various GitHub API responses including success cases, rate limiting, network errors, and repository not found scenarios. Mock should support configurable responses for different test scenarios.",
+            "status": "done",
+            "testStrategy": "Unit tests for mock interface methods, validation that mock implements all required interface methods, and integration tests with existing GitHub client usage patterns"
+          },
+          {
+            "id": 2,
+            "title": "Create mock interfaces for file system operations",
+            "description": "Implement mock file system interfaces to support testing installation and configuration workflows without actual file system changes",
+            "dependencies": [],
+            "details": "Create MockFileSystem interface in pkg/internal/mocks/ that abstracts file operations like creating directories, writing files, checking permissions, and extracting archives. Mock should support testing scenarios for disk full, permission denied, file already exists, and invalid paths. Include methods for config file operations, binary installation paths, and temporary file handling. Use dependency injection pattern to allow swapping real file system with mock during tests.",
+            "status": "done",
+            "testStrategy": "Unit tests for all mock file system operations, validation that mock covers all file system interaction points in installation workflow, and error scenario testing"
+          },
+          {
+            "id": 3,
+            "title": "Set up comprehensive test data fixtures and mock GitHub API responses",
+            "description": "Create test data including sample config files, repository definitions, and mock GitHub API responses for various package scenarios",
+            "dependencies": [],
+            "details": "Create test fixtures in pkg/internal/testdata/ including sample config.yml files with various package configurations, repository definition YAML files for different package types, and JSON mock responses for GitHub API calls. Include fixtures for successful releases, pre-releases, releases with different asset naming patterns, and error responses. Create test data for cross-platform packages (darwin/linux, amd64/arm64) and various archive formats (tar.gz, tar.xz, zip). Include edge cases like packages with no releases, invalid version formats, and malformed repository definitions.",
+            "status": "done",
+            "testStrategy": "Validation tests for all test data fixtures, schema validation for repository definitions, and integration tests using fixtures with actual package installation logic"
+          },
+          {
+            "id": 4,
+            "title": "Extend pkg/internal/assert/ with installation workflow test helpers",
+            "description": "Create specialized test helper functions for validating installation workflows, package configurations, and system state changes",
+            "dependencies": [
+              "21.1",
+              "21.2"
+            ],
+            "details": "Extend existing pkg/internal/assert/ package with helper functions specific to installation testing. Add AssertPackageInstalled, AssertConfigurationValid, AssertVersionUpdated, AssertFileSystemState, and AssertGitHubAPICall helpers. Include functions for validating binary permissions, checking installation paths, verifying configuration file updates, and asserting error conditions. Create helpers that can validate complex installation scenarios like partial failures, rollback operations, and concurrent installations. Follow existing assert package patterns and naming conventions.",
+            "status": "done",
+            "testStrategy": "Unit tests for all new assert helper functions, integration tests with actual installation workflows, and validation that helpers provide clear failure messages"
+          },
+          {
+            "id": 5,
+            "title": "Create deterministic test environments and integration framework",
+            "description": "Set up isolated test environments that provide deterministic results without relying on external dependencies or network access",
+            "dependencies": [
+              "21.3",
+              "21.4"
+            ],
+            "details": "Create test environment setup in pkg/internal/testenv/ that provides isolated, reproducible test conditions. Include temporary directory management, environment variable isolation, and mock network responses. Set up test harness that can simulate various system conditions like different operating systems, architectures, and permission levels. Create integration test framework that combines all mock interfaces and test fixtures into cohesive test scenarios. Ensure test environment cleanup and proper resource management. Include performance benchmarking setup for TDD workflow validation.",
+            "status": "done",
+            "testStrategy": "Integration tests for complete test environment setup, validation that tests run deterministically across different systems, performance tests for test execution speed, and cleanup validation tests"
+          }
+        ]
+      },
+      {
+        "id": 22,
+        "title": "Implement command argument parsing with TDD for optional package name",
+        "description": "Extend cmd/install.go to accept optional package name argument while maintaining backward compatibility",
+        "details": "Following TDD methodology, write failing tests first for command argument parsing scenarios. Extend the existing Cobra command structure in cmd/install.go to accept an optional package name argument. Implement validation for excess arguments and proper help text updates. Follow patterns established in cmd/update.go for argument handling. Ensure Args validation accepts 0 or 1 arguments using cobra.MaximumNArgs(1). Add proper command usage documentation and help text. Handle edge cases like empty strings and special characters in package names. Maintain existing command structure and preserve all current functionality when no arguments are provided.",
+        "testStrategy": "Unit tests for argument parsing with 0, 1, and multiple arguments, validation tests for special characters and edge cases, help text validation tests, and regression tests to ensure existing behavior is preserved",
+        "priority": "high",
+        "dependencies": [
+          21
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Implement package resolution logic with dual lookup strategy",
+        "description": "Create package name resolution that checks both config.yml and repository definitions with proper error handling",
+        "details": "Implement TDD-driven package resolution following the dual lookup strategy: primary lookup in ~/.grab/config.yml and secondary lookup in ~/.grab/repository/. Create a new resolvePackage function that performs case-sensitive string matching. Validate that resolved packages exist in both configuration and repository definitions. Implement clear error messages for missing packages following the specified format patterns. Extract common package resolution logic that can be shared between install and update commands. Handle various config file structures and repository definition formats. Implement fail-fast behavior with descriptive error messages. Follow existing error handling patterns using errors.New instead of fmt.Errorf.",
+        "testStrategy": "Unit tests for package resolution with valid and invalid package names, error handling tests for missing config/repository definitions, edge case tests for malformed package names, and integration tests with various config file formats",
+        "priority": "high",
+        "dependencies": [
+          21,
+          22
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create resolvePackage function with TDD approach",
+            "description": "Implement the core resolvePackage function that performs dual lookup strategy with test-driven development",
+            "dependencies": [],
+            "details": "Create a new resolvePackage function in pkg/resolver.go that implements the dual lookup strategy. Start with writing comprehensive unit tests that define the expected behavior for valid package names, invalid package names, missing config entries, and missing repository definitions. The function should accept a package name string and return resolved package information or appropriate errors. Follow TDD principles by writing tests first, then implementing to make tests pass.",
+            "status": "done",
+            "testStrategy": "Write unit tests for valid package resolution, missing package scenarios, malformed package names, and edge cases before implementation. Use table-driven tests to cover multiple scenarios efficiently."
+          },
+          {
+            "id": 2,
+            "title": "Implement primary lookup in config.yml",
+            "description": "Add logic to search for package names in the user's ~/.grab/config.yml configuration file",
+            "dependencies": [
+              "23.1"
+            ],
+            "details": "Implement the primary lookup phase that searches for the specified package name in the user's config.yml file. Perform case-sensitive string matching against the package names defined in the configuration. Load and parse the config file if not already loaded. Return package configuration details if found, or proceed to secondary lookup if not found. Handle file reading errors and malformed YAML gracefully.",
+            "status": "done",
+            "testStrategy": "Unit tests with mock config files containing various package configurations. Test case-sensitive matching, missing packages, and malformed config files. Verify proper error handling for file access issues."
+          },
+          {
+            "id": 3,
+            "title": "Implement secondary lookup in repository definitions",
+            "description": "Add fallback logic to search package definitions in ~/.grab/repository/ directory",
+            "dependencies": [
+              "23.2"
+            ],
+            "details": "Implement the secondary lookup phase that searches for package definition files in the ~/.grab/repository/ directory. Scan for YAML files matching the package name pattern. Parse package definition files and validate they contain proper package specifications. Return package definition if found, or prepare for error handling if package is not found in either location. Handle directory scanning errors and malformed package definition files.",
+            "status": "done",
+            "testStrategy": "Unit tests with mock repository directory structures. Test package definition file parsing, missing repository files, and malformed package definitions. Verify proper directory scanning and file validation."
+          },
+          {
+            "id": 4,
+            "title": "Implement comprehensive error handling with descriptive messages",
+            "description": "Add robust error handling with clear, actionable error messages following specified format patterns",
+            "dependencies": [
+              "23.2",
+              "23.3"
+            ],
+            "details": "Implement comprehensive error handling for all failure scenarios in package resolution. Create clear, descriptive error messages that follow the specified format patterns from the PRD. Handle cases where packages are missing from config.yml, missing from repository definitions, or missing from both locations. Use errors.New instead of fmt.Errorf following project conventions. Implement fail-fast behavior with specific details about what was searched and what was found.",
+            "status": "done",
+            "testStrategy": "Unit tests for all error scenarios including missing config packages, missing repository packages, file access errors, and malformed files. Verify error message format and content match specifications. Test fail-fast behavior."
+          },
+          {
+            "id": 5,
+            "title": "Extract and integrate shared resolution logic",
+            "description": "Refactor existing install and update commands to use the new shared package resolution logic",
+            "dependencies": [
+              "23.1",
+              "23.2",
+              "23.3",
+              "23.4"
+            ],
+            "details": "Extract common package resolution logic from existing install and update commands and replace with calls to the new resolvePackage function. Ensure backward compatibility with existing command behavior. Update both commands to use the shared resolution logic while maintaining their specific functionality. Verify that all existing tests continue to pass after the refactoring. Handle any edge cases that emerge during integration.",
+            "status": "done",
+            "testStrategy": "Integration tests to verify install and update commands work correctly with the new resolution logic. Regression tests to ensure existing functionality is preserved. End-to-end tests with various package configurations and repository setups."
+          }
+        ]
+      },
+      {
+        "id": 24,
+        "title": "Modify installer logic to support single package installation",
+        "description": "Extend pkg/installer.go to handle filtered installation while preserving existing batch installation functionality",
+        "details": "Following TDD principles, modify the existing installer logic to support both single package and batch installation modes. Create a filtered installation workflow that uses the same core installation logic as batch processing. Implement package filtering before the installation loop while maintaining identical version checking, downloading, and extraction logic. Preserve existing binary placement in ~/.local/bin/, permission setting (755), and replacement logic. Ensure the same GitHub API client usage patterns and rate limit handling. Maintain identical error handling for network failures, extraction errors, and file system permissions. Extract common installation logic into reusable functions to avoid code duplication between single and batch modes.",
+        "testStrategy": "Unit tests for filtered vs batch installation logic, integration tests for complete single package installation workflow, version checking tests, file operations tests, and regression tests to ensure batch installation remains unchanged",
+        "priority": "high",
+        "dependencies": [
+          21,
+          23
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Implement comprehensive error handling for selective installation",
+        "description": "Add robust error handling for all failure scenarios with consistent messaging and graceful degradation",
+        "details": "Implement comprehensive error handling following TDD methodology for all identified failure scenarios. Create standardized error message formats matching existing command patterns. Handle package not found errors, repository definition missing errors, network failures, GitHub API rate limits, archive extraction failures, and file system permission errors. Implement graceful error handling that provides clear user feedback and maintains consistent exit codes. Follow existing error handling conventions in the codebase using errors.New for error creation. Ensure error messages follow the specified formats: 'package \"package-name\" not found in configuration' and 'package \"package-name\" configuration found but no repository definition exists'. Add proper error context and stack trace handling for debugging.",
+        "testStrategy": "Unit tests for each error scenario, error message format validation tests, exit code verification tests, and integration tests for error handling in realistic failure scenarios",
+        "priority": "medium",
+        "dependencies": [
+          24
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Ensure output consistency between single and batch installation modes",
+        "description": "Maintain identical output formatting, progress indicators, and status reporting across both installation modes",
+        "details": "Following TDD principles, ensure output consistency between single package and batch installation modes. Preserve existing logging patterns, progress indicators, and status reporting formats. Implement shared output formatting functions to avoid duplication and maintain consistency. Follow output patterns established by grab update [package-name] command for single package operations. Ensure success/failure messaging format remains identical between modes. Maintain existing color coding, progress bars, and status indicators. Create reusable output formatting functions that can be shared between installation modes. Validate that verbose and quiet modes work consistently across both installation types.",
+        "testStrategy": "Output format comparison tests between single and batch modes, progress indicator validation tests, logging consistency tests, and user experience tests to ensure identical behavior",
+        "priority": "medium",
+        "dependencies": [
+          24,
+          25
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "Create comprehensive integration test suite",
+        "description": "Develop end-to-end integration tests covering complete workflows and edge cases",
+        "details": "Create comprehensive integration tests following TDD methodology for complete selective installation workflows. Test end-to-end scenarios including package installation, updates, and mixed workflows combining grab update and grab install commands. Create integration tests for various configuration file structures, repository definition formats, and template variable resolution. Test integration with GitHub API, file system operations, and binary execution. Include tests for network failure recovery, partial installation scenarios, and configuration edge cases. Create performance tests to ensure no regression in installation speed. Test cross-platform compatibility for macOS and Linux environments. Implement realistic test scenarios using temporary directories and mock GitHub responses.",
+        "testStrategy": "End-to-end workflow tests, configuration integration tests, GitHub API integration tests, file system integration tests, performance regression tests, and cross-platform compatibility tests",
+        "priority": "medium",
+        "dependencies": [
+          26
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create integration test framework and setup utilities",
+            "description": "Establish test framework with temporary directories, mock GitHub API responses, and test utilities for comprehensive integration testing",
+            "dependencies": [],
+            "details": "Create integration_test.go in a new integration test package. Implement test setup utilities including temporary directory creation, mock HTTP server for GitHub API responses, and helper functions for creating test configurations. Create utilities for setting up test package repositories, generating mock release data, and cleaning up test environments. Implement common test data structures for various package configurations and release scenarios.",
+            "status": "done",
+            "testStrategy": "Unit tests for test utilities, validation of mock server responses, and verification of cleanup operations"
+          },
+          {
+            "id": 2,
+            "title": "Implement end-to-end package installation workflow tests",
+            "description": "Create comprehensive tests for complete package installation scenarios including fresh installs, updates, and configuration variations",
+            "dependencies": [
+              "27.1"
+            ],
+            "details": "Implement integration tests covering full grab install workflows from configuration parsing to binary installation. Test scenarios include: fresh package installation, package updates with version changes, installation with different archive formats (tar.gz, zip, tar.xz), and cross-platform binary selection. Test template variable resolution, embedded binary path detection, and file system operations. Verify proper binary placement in ~/.local/bin/ and executable permissions.",
+            "status": "done",
+            "testStrategy": "End-to-end workflow tests with real temporary directories, mock GitHub responses, and verification of installed binaries"
+          },
+          {
+            "id": 3,
+            "title": "Create GitHub API integration and network failure tests",
+            "description": "Test GitHub API interactions including rate limiting, network failures, and API response variations",
+            "dependencies": [
+              "27.1"
+            ],
+            "details": "Implement tests for GitHub API integration covering release fetching, asset discovery, and error handling. Test scenarios include: successful API calls, rate limiting responses, network timeouts, invalid repository responses, and malformed release data. Implement retry logic testing and graceful degradation. Test both authenticated and unauthenticated API calls. Verify proper error messages and recovery mechanisms.",
+            "status": "done",
+            "testStrategy": "Integration tests with mock GitHub API, network failure simulation, and rate limiting scenarios"
+          },
+          {
+            "id": 4,
+            "title": "Implement configuration and repository integration tests",
+            "description": "Test various configuration file structures, repository definitions, and template variable scenarios",
+            "dependencies": [
+              "27.1"
+            ],
+            "details": "Create integration tests for configuration file handling including config.yml parsing, package repository definitions, and template variable resolution. Test scenarios include: multiple package configurations, complex template variables, version regex patterns, platform-specific configurations, and edge cases in YAML parsing. Test integration between user configuration and package repository definitions. Verify proper handling of missing or invalid configurations.",
+            "status": "done",
+            "testStrategy": "Configuration parsing tests, template resolution verification, and edge case handling for invalid configurations"
+          },
+          {
+            "id": 5,
+            "title": "Create performance and cross-platform compatibility tests",
+            "description": "Implement performance regression tests and cross-platform compatibility validation for macOS and Linux environments",
+            "dependencies": [
+              "27.2",
+              "27.3",
+              "27.4"
+            ],
+            "details": "Implement performance benchmarks for installation workflows to prevent regression. Test installation speed, memory usage, and concurrent operations. Create cross-platform compatibility tests covering macOS and Linux environments with different architectures (amd64, arm64). Test platform-specific binary selection, archive handling differences, and file system permission variations. Implement CI-friendly tests that can run in various environments.",
+            "status": "done",
+            "testStrategy": "Performance benchmarks with baseline measurements, cross-platform test matrix, and CI integration validation"
+          }
+        ]
+      },
+      {
+        "id": 28,
+        "title": "Validate backward compatibility and finalize implementation",
+        "description": "Ensure zero breaking changes to existing functionality and complete final validation against success criteria",
+        "details": "Perform comprehensive backward compatibility validation to ensure zero breaking changes to existing grab install behavior. Run complete regression test suite against existing functionality including performance benchmarks. Validate that all success criteria are met including >90% test coverage, consistent output formatting, and proper error handling. Complete code review preparation ensuring adherence to golangci-lint standards and Go coding conventions. Verify comprehensive inline documentation and proper error handling using errors.New pattern. Conduct final integration testing in CI/CD pipeline environment. Perform user acceptance testing scenarios and validate against original requirements. Complete performance testing to ensure no degradation in installation speed or resource usage.",
+        "testStrategy": "Comprehensive regression test suite, backward compatibility validation tests, performance benchmark comparisons, test coverage verification, code quality validation, and user acceptance testing scenarios",
+        "priority": "high",
+        "dependencies": [
+          27
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Run comprehensive regression testing suite",
+            "description": "Execute complete regression test suite against existing grab install functionality to ensure zero breaking changes",
+            "dependencies": [],
+            "details": "Run all existing unit tests, integration tests, and end-to-end tests using 'go test -count=1 ./...' command. Execute tests with coverage reporting using 'go test -cover ./...' to verify >90% test coverage requirement. Test all package installation scenarios including different archive formats (tar.gz, tar.xz, zip, gzip), platform combinations (darwin/linux, amd64/arm64), and error conditions. Validate that existing grab install behavior remains unchanged when no package name is specified.",
+            "status": "done",
+            "testStrategy": "Execute full test suite with coverage reporting, validate all existing functionality remains intact, verify test coverage meets 90% threshold"
+          },
+          {
+            "id": 2,
+            "title": "Perform backward compatibility validation",
+            "description": "Validate that all existing grab install workflows continue to function exactly as before with zero breaking changes",
+            "dependencies": [
+              "28.1"
+            ],
+            "details": "Test existing grab install command without package specification to ensure it processes all packages in configuration. Verify output formatting remains consistent with previous behavior. Test edge cases including empty configuration, missing packages, network failures, and invalid GitHub releases. Validate that error messages and exit codes match existing behavior. Test with real package installations using test configuration files to ensure actual binary downloads and installations work properly.",
+            "status": "done",
+            "testStrategy": "Manual testing of existing workflows, comparison of output formats, validation of error handling and exit codes"
+          },
+          {
+            "id": 3,
+            "title": "Validate code quality and standards compliance",
+            "description": "Ensure all code meets golangci-lint standards and follows Go coding conventions with proper documentation",
+            "dependencies": [
+              "28.2"
+            ],
+            "details": "Run golangci-lint using 'golangci-lint run ./...' to verify code meets all linting standards. Check that all new code follows established Go conventions and patterns used in the codebase. Verify that error handling uses errors.New pattern as specified in CLAUDE.md guidelines. Ensure all public functions and types have proper Go documentation comments. Validate that code formatting follows gofumpt standards. Review inline documentation for clarity and completeness.",
+            "status": "done",
+            "testStrategy": "Automated linting validation, manual code review for documentation completeness, verification of coding standards adherence"
+          },
+          {
+            "id": 4,
+            "title": "Conduct performance benchmarking and validation",
+            "description": "Perform performance testing to ensure no degradation in installation speed or resource usage",
+            "dependencies": [
+              "28.3"
+            ],
+            "details": "Run performance benchmarks comparing installation times before and after implementation changes. Test memory usage patterns during package installations. Validate that GitHub API call patterns remain efficient and don't introduce additional requests. Test with both single package and full update scenarios to ensure performance characteristics are maintained or improved. Measure binary download speeds and archive extraction performance. Document performance metrics and compare against baseline measurements.",
+            "status": "done",
+            "testStrategy": "Performance benchmark comparisons, memory usage profiling, API request pattern analysis, installation speed measurements"
+          },
+          {
+            "id": 5,
+            "title": "Complete final integration and user acceptance testing",
+            "description": "Perform final validation in CI/CD environment and conduct user acceptance testing scenarios",
+            "dependencies": [
+              "28.4"
+            ],
+            "details": "Test the complete implementation in a clean CI/CD pipeline environment to validate build and test processes. Execute user acceptance testing scenarios including typical user workflows like installing specific packages, updating configurations, and handling error conditions. Validate that all success criteria are met including proper output formatting, error handling, and functionality. Test cross-platform compatibility on supported architectures. Prepare final code review materials and ensure all requirements from the original task specification are satisfied.",
+            "status": "done",
+            "testStrategy": "CI/CD pipeline validation, user acceptance testing scenarios, cross-platform compatibility testing, final requirements verification"
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-07-22T14:08:00.822Z",
-      "updated": "2025-07-30T13:57:28.820Z",
+      "updated": "2025-07-31T13:58:57.839Z",
       "description": "Tasks for master context"
     }
   }
