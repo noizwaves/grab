@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	stdcontext "context"
 	"errors"
 	"fmt"
 	"io"
@@ -19,10 +20,11 @@ type Installer struct {
 }
 
 func (i *Installer) Install(context *Context, packageName string, out io.Writer) error {
+	ctx := stdcontext.Background()
 	if packageName != "" {
-		slog.Info("Installing specific package", "package", packageName)
+		slog.InfoContext(ctx, "Installing specific package", "package", packageName)
 	} else {
-		slog.Info("Installing configured packages")
+		slog.InfoContext(ctx, "Installing configured packages")
 	}
 
 	err := context.EnsureBinPathExists()
@@ -106,7 +108,8 @@ func (i *Installer) installBinary(context *Context, binary *Binary, out io.Write
 }
 
 func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) ([]byte, error) {
-	slog.Info("Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
+	ctx := stdcontext.Background()
+	slog.InfoContext(ctx, "Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
 
 	asset, err := binary.GetAssetFileName(context.Platform, context.Architecture)
 	if err != nil {
@@ -167,8 +170,9 @@ func extractExecutable(binary, asset string, data *[]byte) ([]byte, error) {
 }
 
 func getCurrentVersion(destPath string, binary *Binary) (string, error) {
+	ctx := stdcontext.Background()
 	//nolint:gosec
-	cmd := exec.Command(destPath, binary.VersionArgs...)
+	cmd := exec.CommandContext(ctx, destPath, binary.VersionArgs...)
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -192,7 +196,8 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	// i.e. memory mounted
 	destDir := path.Dir(destPath)
 	tempPath := path.Join(destDir, ".grab-temp-"+binary.Name)
-	slog.Debug("Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
+	ctx := stdcontext.Background()
+	slog.DebugContext(ctx, "Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
 
 	// Ensure temp path is clear
 	err := removeFileIfPresent(tempPath)
@@ -223,7 +228,8 @@ func tryRemoveFromFilesystem(path string) {
 	if err == nil {
 		err := os.Remove(path)
 		if err != nil {
-			slog.Warn("Failed to remove file", "path", path)
+			ctx := stdcontext.Background()
+			slog.WarnContext(ctx, "Failed to remove file", "path", path)
 		}
 	}
 }

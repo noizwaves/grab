@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -30,7 +31,8 @@ type Context struct {
 }
 
 func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
-	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
 	configPath, err := getConfigDirPath(configPathOverride)
 	if err != nil {
@@ -113,13 +115,15 @@ func getPackageNames(repository *repository) []string {
 }
 
 func locatePackage(repository *repository, name string) (*ConfigPackage, error) {
-	slog.Debug("Looking for configured package in repository", "name", name)
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Looking for configured package in repository", "name", name)
 
 	idx := slices.IndexFunc(repository.Packages, func(p *ConfigPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
-		slog.Error("Package missing from repository", "name", name)
+		ctx := context.Background()
+		slog.ErrorContext(ctx, "Package missing from repository", "name", name)
 
-		slog.Debug("Repository contains", "packageNames", getPackageNames(repository))
+		slog.DebugContext(ctx, "Repository contains", "packageNames", getPackageNames(repository))
 
 		return nil, fmt.Errorf("package %q missing from repository", name)
 	}

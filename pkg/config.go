@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -51,14 +52,15 @@ type ConfigProgram struct {
 }
 
 func loadConfig(path string) (*configRoot, error) {
-	slog.Info("Loading config file from disk", "path", path)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Loading config file from disk", "path", path)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	slog.Debug("Loaded config from disk", "content", string(data))
+	slog.DebugContext(ctx, "Loaded config from disk", "content", string(data))
 
 	output := configRoot{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
@@ -73,7 +75,8 @@ func loadConfig(path string) (*configRoot, error) {
 }
 
 func saveConfig(config *configRoot, path string) error {
-	slog.Info("Saving config file to disk", "path", path)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Saving config file to disk", "path", path)
 
 	var buf bytes.Buffer
 
@@ -87,7 +90,7 @@ func saveConfig(config *configRoot, path string) error {
 
 	data := buf.Bytes()
 
-	slog.Debug("Writing config to disk", "content", string(data))
+	slog.DebugContext(ctx, "Writing config to disk", "content", string(data))
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -104,14 +107,15 @@ func saveConfig(config *configRoot, path string) error {
 }
 
 func loadPackage(path string) (*ConfigPackage, error) {
-	slog.Info("Loading package config from disk", "path", path)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Loading package config from disk", "path", path)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading package file: %w", err)
 	}
 
-	slog.Debug("Loaded package config from disk", "content", string(data))
+	slog.DebugContext(ctx, "Loaded package config from disk", "content", string(data))
 
 	output := ConfigPackage{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
@@ -126,7 +130,8 @@ func loadPackage(path string) (*ConfigPackage, error) {
 }
 
 func savePackage(packageConfig *ConfigPackage, path string) error {
-	slog.Info("Saving package config to disk", "path", path)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Saving package config to disk", "path", path)
 
 	var buf bytes.Buffer
 
@@ -140,7 +145,7 @@ func savePackage(packageConfig *ConfigPackage, path string) error {
 
 	data := buf.Bytes()
 
-	slog.Debug("Writing package config to disk", "content", string(data))
+	slog.DebugContext(ctx, "Writing package config to disk", "content", string(data))
 
 	err = os.WriteFile(path, data, 0o644) //nolint:gosec,mnd
 	if err != nil {
@@ -151,7 +156,8 @@ func savePackage(packageConfig *ConfigPackage, path string) error {
 }
 
 func loadRepository(repoPath string) (*repository, error) {
-	slog.Info("Loading packages from repository on disk", "repoPath", repoPath)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Loading packages from repository on disk", "repoPath", repoPath)
 
 	packages := []*ConfigPackage{}
 
@@ -165,12 +171,12 @@ func loadRepository(repoPath string) (*repository, error) {
 		}
 
 		if !strings.HasSuffix(path, ".yml") {
-			slog.Debug("Skipping non .yml file", "path", path)
+			slog.DebugContext(ctx, "Skipping non .yml file", "path", path)
 
 			return nil
 		}
 
-		loaded, err := loadPackage(path)
+		loaded, err := loadPackage(path) //nolint:contextcheck
 		if err != nil {
 			return fmt.Errorf("error loading package config: %w", err)
 		}
@@ -183,7 +189,7 @@ func loadRepository(repoPath string) (*repository, error) {
 		return nil, fmt.Errorf("error loading repository: %w", err)
 	}
 
-	slog.Info("Loaded packages from repository", "count", len(packages))
+	slog.InfoContext(ctx, "Loaded packages from repository", "count", len(packages))
 
 	return &repository{
 		Packages: packages,

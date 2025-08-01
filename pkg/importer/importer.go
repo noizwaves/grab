@@ -1,6 +1,7 @@
 package importer
 
 import (
+	stdcontext "context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -25,7 +26,8 @@ func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error
 		return err
 	}
 
-	slog.Info("Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
+	ctx := stdcontext.Background()
+	slog.InfoContext(ctx, "Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
 
 	var release *github.Release
 	if releaseURL.IsLatest {

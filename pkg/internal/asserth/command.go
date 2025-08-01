@@ -2,6 +2,7 @@ package asserth
 
 import (
 	"bytes"
+	"context"
 	"os/exec"
 	"testing"
 
@@ -11,7 +12,8 @@ import (
 func CommandSucceeds(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command(path)
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, path)
 
 	err := cmd.Start()
 	if err != nil {
@@ -27,7 +29,8 @@ func CommandSucceeds(t *testing.T, path string) {
 func CommandStdoutContains(t *testing.T, path string, expected string) {
 	t.Helper()
 
-	cmd := exec.Command(path)
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, path)
 
 	out := bytes.Buffer{}
 	cmd.Stdout = &out

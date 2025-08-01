@@ -130,7 +130,8 @@ func (g *ClientImpl) DownloadReleaseAsset(org, repo, release, asset string) ([]b
 	url := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",
 		org, repo, release, asset)
 
-	slog.Debug("Downloading asset from GitHub", "url", url)
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Downloading asset from GitHub", "url", url)
 
 	return downloadArtifact(url)
 }
