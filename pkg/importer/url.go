@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// GitHubReleaseURL represents a parsed GitHub release URL.
+// GitHubReleaseURL represents a parsed GitHub URL.
 type GitHubReleaseURL struct {
 	// Organization is the GitHub organization or user name
 	Organization string
@@ -15,24 +15,13 @@ type GitHubReleaseURL struct {
 	// Repository is the GitHub repository name
 	Repository string
 
-	// Tag is the release tag (e.g., "v1.2.3", "1.2.3")
-	// Empty for latest releases
-	Tag string
-
-	// IsLatest indicates if this is a /releases/latest URL
-	IsLatest bool
-
 	// Original is the original URL string
 	Original string
 }
 
 // String returns a string representation of the parsed URL.
 func (u *GitHubReleaseURL) String() string {
-	if u.IsLatest {
-		return fmt.Sprintf("%s/%s (latest)", u.Organization, u.Repository)
-	}
-
-	return fmt.Sprintf("%s/%s@%s", u.Organization, u.Repository, u.Tag)
+	return fmt.Sprintf("%s/%s", u.Organization, u.Repository)
 }
 
 // Validate checks if the parsed URL components are valid.
@@ -43,10 +32,6 @@ func (u *GitHubReleaseURL) Validate() error {
 
 	if u.Repository == "" {
 		return errors.New("repository cannot be empty")
-	}
-
-	if !u.IsLatest && u.Tag == "" {
-		return errors.New("tag cannot be empty for non-latest releases")
 	}
 
 	return nil
@@ -77,37 +62,24 @@ func newParseError(urlStr, field, reason string) *ParseError {
 }
 
 const (
-	minURLPathComponents = 4
-	minTagPathComponents = 5
-	pathOrgIndex         = 0
-	pathRepoIndex        = 1
-	pathReleasesIndex    = 2
-	pathTypeIndex        = 3
-	pathTagIndex         = 4
+	minURLPathComponents = 2
 )
 
-// ParseGitHubReleaseURL parses a GitHub release URL and extracts components.
+// ParseGitHubReleaseURL parses a GitHub URL and extracts org/repo components.
 func ParseGitHubReleaseURL(inputURL string) (*GitHubReleaseURL, error) {
 	parsedURL, err := parseAndValidateURL(inputURL)
 	if err != nil {
 		return nil, err
 	}
 
-	pathParts, err := extractAndValidatePathParts(inputURL, parsedURL.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	tag, isLatest, err := parseReleaseInfo(inputURL, pathParts)
+	organization, repository, err := extractOrgAndRepo(inputURL, parsedURL.Path)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &GitHubReleaseURL{
-		Organization: pathParts[pathOrgIndex],
-		Repository:   pathParts[pathRepoIndex],
-		Tag:          tag,
-		IsLatest:     isLatest,
+		Organization: organization,
+		Repository:   repository,
 		Original:     inputURL,
 	}
 
@@ -136,39 +108,11 @@ func parseAndValidateURL(inputURL string) (*url.URL, error) {
 	return parsedURL, nil
 }
 
-func extractAndValidatePathParts(inputURL, path string) ([]string, error) {
+func extractOrgAndRepo(inputURL, path string) (string, string, error) {
 	pathParts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(pathParts) < minURLPathComponents {
-		return nil, newParseError(inputURL, "path", "insufficient path components for GitHub release URL")
+		return "", "", newParseError(inputURL, "path", "insufficient path components for GitHub URL")
 	}
 
-	if pathParts[pathReleasesIndex] != "releases" {
-		return nil, newParseError(inputURL, "path",
-			fmt.Sprintf("expected 'releases', got '%s'", pathParts[pathReleasesIndex]))
-	}
-
-	return pathParts, nil
-}
-
-func parseReleaseInfo(inputURL string, pathParts []string) (string, bool, error) {
-	releaseType := pathParts[pathTypeIndex]
-
-	switch releaseType {
-	case "latest":
-		return "", true, nil
-	case "tag":
-		if len(pathParts) < minTagPathComponents {
-			return "", false, newParseError(inputURL, "tag", "tag release URL must specify a version")
-		}
-
-		return pathParts[pathTagIndex], false, nil
-	default:
-		// Handle direct version format: /releases/version
-		if len(pathParts) == minURLPathComponents {
-			return pathParts[pathTypeIndex], false, nil
-		}
-
-		return "", false, newParseError(inputURL, "path",
-			"expected 'tag', 'latest', or direct version, got '"+releaseType+"'")
-	}
+	return pathParts[0], pathParts[1], nil
 }

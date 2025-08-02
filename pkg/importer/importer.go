@@ -29,13 +29,7 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 	ctx := context.Background()
 	slog.InfoContext(ctx, "Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
 
-	var release *github.Release
-	if releaseURL.IsLatest {
-		release, err = i.githubClient.GetLatestRelease(releaseURL.Organization, releaseURL.Repository)
-	} else {
-		release, err = i.githubClient.GetReleaseByTag(releaseURL.Organization, releaseURL.Repository, releaseURL.Tag)
-	}
-
+	release, err := i.githubClient.GetLatestRelease(releaseURL.Organization, releaseURL.Repository)
 	if err != nil {
 		return fmt.Errorf("failed to get release: %w", err)
 	}

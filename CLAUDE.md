@@ -123,9 +123,44 @@ Uses Go templates for dynamic URL and filename generation based on:
 
 - **IMPORTANT**: All generated text-based files must end with a trailing newline character. This ensures proper file formatting, better git diffs, and compliance with POSIX standards.
 
+## Development Flow
+
+### Outside-In Development Approach
+
+When implementing new features or making changes, follow this development flow:
+
+1. **Start with CLI commands** (`cmd/`): Define the user interface and command structure first
+2. **Work inward to modules** (`pkg/`): Implement the business logic and supporting functions
+3. **Use TDD sub-agents**: Leverage the tdd-* sub-agents for test-driven development throughout the process
+
+### Development Workflow
+
+1. **CLI Interface First**: Begin by defining or modifying the CLI command interface in `cmd/`
+   - Define command structure, flags, and user interactions
+   - Write integration tests that validate the complete user workflow
+   - Stub out the underlying functionality calls
+
+2. **Test-Driven Development**: Use tdd-* sub-agents to drive implementation
+   - Start with failing tests that describe the desired behavior
+   - Implement the minimum code to make tests pass
+   - Refactor while maintaining test coverage
+
+3. **Module Implementation**: Work inward to implement core logic in `pkg/`
+   - Implement business logic driven by the CLI requirements
+   - Focus on public APIs that support the CLI interface
+   - Build supporting functions and internal modules as needed
+
+### Sub-Agent Usage
+
+- **tdd-red**: Create failing tests that define the desired behavior
+- **tdd-green**: Implement the minimum code to make tests pass
+- **tdd-refactor**: Improve code structure while maintaining test coverage
+
 ## Development Guidelines
 
 - Do not test private functions directly. Instead, call the public functions that use the private functions.
+- Follow the outside-in development approach: CLI → core modules → supporting functions
+- Use TDD sub-agents to maintain test coverage throughout development
 
 ## Go Best Practices
 
