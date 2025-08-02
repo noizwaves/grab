@@ -67,7 +67,7 @@ func (b *Binary) GetAssetFileName(platform, arch string) (string, error) {
 		return "", fmt.Errorf("filename missing for platform,arch of %q", key)
 	}
 
-	tmpl, err := template.New("filename:" + b.Name).Parse(fileNameTmplStr)
+	tmpl, err := template.New("filename:" + b.Name + "," + key).Parse(fileNameTmplStr)
 	if err != nil {
 		return "", fmt.Errorf("error parsing asset filename template: %w", err)
 	}
@@ -91,14 +91,28 @@ func (b *Binary) GetEmbeddedBinaryPath(platform, arch string) (string, error) {
 	}
 
 	key := platform + "," + arch
-	embeddedBinaryPath, ok := b.embeddedBinaryPath[key]
+	embeddedBinaryPathTmplStr, ok := b.embeddedBinaryPath[key]
 
 	// A missing key is a hard failure
 	if !ok {
 		return "", fmt.Errorf("missing value for platform=%s,arch=%s", platform, arch)
 	}
 
-	return embeddedBinaryPath, nil
+	tmpl, err := template.New("embeddedBinaryPath:" + b.Name).Parse(embeddedBinaryPathTmplStr)
+	if err != nil {
+		return "", fmt.Errorf("error parsing embedded binary path template: %w", err)
+	}
+
+	vm := newURLViewModel(b)
+
+	var output bytes.Buffer
+
+	err = tmpl.Execute(&output, vm)
+	if err != nil {
+		return "", fmt.Errorf("error rendering embedded binary path template: %w", err)
+	}
+
+	return output.String(), nil
 }
 
 func (b *Binary) GetReleaseName() (string, error) {

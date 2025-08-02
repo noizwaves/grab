@@ -138,6 +138,40 @@ func TestGetEmbeddedBinaryPath(t *testing.T) {
 		assert.Equal(t, "", result)
 		assert.ErrorContains(t, err, "missing value for platform=linux,arch=amd64")
 	})
+
+	t.Run("EmbeddedBinaryPathWithVersion", func(t *testing.T) {
+		binary := base
+		binary.embeddedBinaryPath = map[string]string{
+			"linux,arm64": "bin/{{ .Version }}/foo",
+		}
+
+		result, err := binary.GetEmbeddedBinaryPath("linux", "arm64")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "bin/1.2.3/foo", result)
+	})
+
+	t.Run("InvalidEmbeddedBinaryPathTemplate", func(t *testing.T) {
+		binary := base
+		binary.embeddedBinaryPath = map[string]string{
+			"linux,arm64": "bin/{{ .Version",
+		}
+
+		_, err := binary.GetEmbeddedBinaryPath("linux", "arm64")
+
+		assert.ErrorContains(t, err, "error parsing embedded binary path template")
+	})
+
+	t.Run("InvalidEmbeddedBinaryPathVariable", func(t *testing.T) {
+		binary := base
+		binary.embeddedBinaryPath = map[string]string{
+			"linux,arm64": "bin/{{ .DoesNotExist }}/foo",
+		}
+
+		_, err := binary.GetEmbeddedBinaryPath("linux", "arm64")
+
+		assert.ErrorContains(t, err, "error rendering embedded binary path template")
+	})
 }
 
 func TestBinaryShouldReplace(t *testing.T) {
