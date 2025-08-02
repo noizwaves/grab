@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,26 +13,27 @@ type Updater struct {
 	GitHubClient github.Client
 }
 
-func (u *Updater) Update(context *Context, packageName string, out io.Writer) error {
+func (u *Updater) Update(gCtx *GrabContext, packageName string, out io.Writer) error {
+	ctx := context.Background()
 	// Validate package name if specified
 	if packageName != "" {
-		if _, exists := context.Config.Packages[packageName]; !exists {
+		if _, exists := gCtx.Config.Packages[packageName]; !exists {
 			return fmt.Errorf("package %q not found in configuration", packageName)
 		}
 
-		slog.Info("Updating specific package", "package", packageName)
+		slog.InfoContext(ctx, "Updating specific package", "package", packageName)
 	} else {
 		// Check if any packages are configured
-		if len(context.Config.Packages) == 0 {
-			return fmt.Errorf("no packages configured in %s", context.ConfigPath)
+		if len(gCtx.Config.Packages) == 0 {
+			return fmt.Errorf("no packages configured in %s", gCtx.ConfigPath)
 		}
 
-		slog.Info("Updating all configured packages")
+		slog.InfoContext(ctx, "Updating all configured packages")
 	}
 
 	dirty := false
 
-	binariesToProcess := u.filterBinaries(context.Binaries, packageName)
+	binariesToProcess := u.filterBinaries(gCtx.Binaries, packageName)
 
 	for _, binary := range binariesToProcess {
 		latestRelease, err := u.GitHubClient.GetLatestRelease(binary.Org, binary.Repo)
@@ -51,19 +53,19 @@ func (u *Updater) Update(context *Context, packageName string, out io.Writer) er
 
 			dirty = true
 
-			setBinaryVersion(context.Config, binary.Name, latestVersion)
+			setBinaryVersion(gCtx.Config, binary.Name, latestVersion)
 		}
 	}
 
 	if dirty {
-		err := saveConfig(context.Config, context.ConfigPath)
+		err := saveConfig(gCtx.Config, gCtx.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("error updating config file: %w", err)
 		}
 
 		fmt.Fprintln(out, "\nUpdated config file. Now run `grab install`.")
 	} else {
-		slog.Debug("No config changes required, no versions were changed")
+		slog.DebugContext(ctx, "No config changes required, no versions were changed")
 	}
 
 	return nil

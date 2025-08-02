@@ -16,7 +16,7 @@ func TestInstall(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/simple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	gCtx, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestInstall(t *testing.T) {
 	}
 
 	out := bytes.Buffer{}
-	err = installer.Install(context, "", &out)
+	err = installer.Install(gCtx, "", &out)
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "bar: installing 1.0.0... Done!")
@@ -45,7 +45,7 @@ func TestInstall_SelectivePackage(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/multiple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	gCtx, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestInstall_SelectivePackage(t *testing.T) {
 	}
 
 	out := bytes.Buffer{}
-	err = installer.Install(context, "bar", &out)
+	err = installer.Install(gCtx, "bar", &out)
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "bar: installing 1.0.0... Done!")
@@ -77,7 +77,7 @@ func TestInstall_SelectivePackage_PackageNotFound(t *testing.T) {
 	configDir := osh.CopyDir(t, "testdata/contexts/multiple")
 	binDir := t.TempDir()
 
-	context, err := NewContext(configDir, binDir)
+	gCtx, err := NewGrabContext(configDir, binDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestInstall_SelectivePackage_PackageNotFound(t *testing.T) {
 	}
 
 	out := bytes.Buffer{}
-	err = installer.Install(context, "nonexistent", &out)
+	err = installer.Install(gCtx, "nonexistent", &out)
 
 	assert.Error(t, err)
 	assert.Equal(t, "package definition for nonexistent not found", err.Error())

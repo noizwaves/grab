@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -19,13 +20,14 @@ func NewImporter(githubClient github.Client) *Importer {
 	}
 }
 
-func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error {
+func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) error {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Importing GitHub Release", "org", releaseURL.Organization, "repo", releaseURL.Repository)
 
 	var release *github.Release
 	if releaseURL.IsLatest {
@@ -73,7 +75,7 @@ func (i *Importer) Import(context *pkg.Context, url string, out io.Writer) error
 		},
 	}
 
-	packagePath, err := context.SavePackage(&packageConfig)
+	packagePath, err := gCtx.SavePackage(&packageConfig)
 	if err != nil {
 		return fmt.Errorf("failed to save package: %w", err)
 	}

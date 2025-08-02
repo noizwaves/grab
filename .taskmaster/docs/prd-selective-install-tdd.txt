@@ -57,7 +57,7 @@ grab install [package-name]
 - Format: `package "package-name" not found in configuration`
 
 **Package not found in repository:**
-- Command must terminate with descriptive error message  
+- Command must terminate with descriptive error message
 - Format: `package "package-name" configuration found but no repository definition exists`
 
 **Invalid input:**
@@ -129,7 +129,7 @@ grab install [package-name]
 
 #### End-to-End Workflow Tests
 - ✅ Complete single package installation workflow
-- ✅ Installation of package that requires update of existing binary  
+- ✅ Installation of package that requires update of existing binary
 - ✅ Installation of package that's already up to date
 - ✅ Mixed workflow: update config with `grab update package`, then install with `grab install package`
 
@@ -227,7 +227,7 @@ grab install [package-name]
 - Implement basic command argument parsing with TDD
 - Create package resolution logic with full test coverage
 
-### Sprint 2: Core Installation Logic  
+### Sprint 2: Core Installation Logic
 - Implement single package installation workflow using TDD
 - Add comprehensive error handling with test coverage
 - Ensure output consistency with existing commands

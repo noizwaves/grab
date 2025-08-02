@@ -15,7 +15,7 @@ import (
 func TestImport_Success_LatestRelease(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestImport_Success_LatestRelease(t *testing.T) {
 	})
 
 	out := bytes.Buffer{}
-	err = importer.Import(context, "https://github.com/foo/myapp/releases/latest", &out)
+	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), `Package "myapp" saved to`)
@@ -46,7 +46,7 @@ func TestImport_Success_LatestRelease(t *testing.T) {
 func TestImport_Success_TaggedRelease(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestImport_Success_TaggedRelease(t *testing.T) {
 	})
 
 	out := bytes.Buffer{}
-	err = importer.Import(context, "https://github.com/foo/myapp/releases/tag/v1.2.3", &out)
+	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/tag/v1.2.3", &out)
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), `Package "myapp" saved to`)
@@ -77,7 +77,7 @@ func TestImport_Success_TaggedRelease(t *testing.T) {
 func TestImport_Error_InvalidURL(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestImport_Error_InvalidURL(t *testing.T) {
 	importer := NewImporter(&githubh.MockGitHubClient{})
 
 	out := bytes.Buffer{}
-	err = importer.Import(context, "https://example.com/invalid/url", &out)
+	err = importer.Import(gCtx, "https://example.com/invalid/url", &out)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid")
@@ -95,7 +95,7 @@ func TestImport_Error_InvalidURL(t *testing.T) {
 func TestImport_Error_GitHubAPIFailure(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestImport_Error_GitHubAPIFailure(t *testing.T) {
 	importer := NewImporter(&githubh.MockGitHubClient{})
 
 	out := bytes.Buffer{}
-	err = importer.Import(context, "https://github.com/foo/myapp/releases/latest", &out)
+	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get release")
@@ -114,7 +114,7 @@ func TestImport_Error_GitHubAPIFailure(t *testing.T) {
 func TestImport_Error_NoMatchingAssets(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
-	context, err := pkg.NewContext(configDir, t.TempDir())
+	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestImport_Error_NoMatchingAssets(t *testing.T) {
 	})
 
 	out := bytes.Buffer{}
-	err = importer.Import(context, "https://github.com/foo/myapp/releases/latest", &out)
+	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no matching asset name found")
