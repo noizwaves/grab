@@ -97,7 +97,7 @@ spec:
       linux,arm64: "archive-{{ .Version }}-linux_arm64.tar.gz"
     embeddedBinaryPath:
       darwin,amd64: "path/to/binary"
-      linux,amd64: "bin/binary"
+      linux,amd64: "{{ .Version }}ed/path/to/binary"
   program:
     versionArgs: [--version]
     versionRegex: \d+\.\d+\.\d+
@@ -112,7 +112,7 @@ spec:
 - `name`: Release name template (Go templated string, with `Version` available)
 - `versionRegex`: Regular expression to extract version numbers from release names
 - `fileName`: Platform-specific asset archive filenames (Go templated string, with `Version` available)
-- `embeddedBinaryPath`: _(Optional)_ Platform-specific path to binary within the archive
+- `embeddedBinaryPath`: _(Optional)_ Platform-specific path to binary within the archive (Go templated string, with `Version` available)
 
 **Program Configuration**
 - `versionArgs`: Command-line arguments to retrieve the program's version
@@ -137,29 +137,29 @@ packages:
 
 ### Advanced Examples
 
-#### Complex Package with Embedded Binary Path
+#### Complex package with version specific embedded binary path
 
 ```yaml
 apiVersion: grab.noizwaves.com/v1alpha1
 kind: Package
 metadata:
-  name: yazi
+  name: crush
 spec:
   gitHubRelease:
-    org: sxyazi
-    repo: yazi
+    org: charmbracelet
+    repo: crush
     name: "v{{ .Version }}"
     versionRegex: \d+\.\d+\.\d+
     fileName:
-      darwin,amd64: "yazi-x86_64-apple-darwin.zip"
-      darwin,arm64: "yazi-aarch64-apple-darwin.zip"
-      linux,amd64: "yazi-x86_64-unknown-linux-gnu.zip"
-      linux,arm64: "yazi-aarch64-unknown-linux-gnu.zip"
+      darwin,amd64: crush_{{ .Version }}_Darwin_x86_64.tar.gz
+      darwin,arm64: crush_{{ .Version }}_Darwin_arm64.tar.gz
+      linux,amd64: crush_{{ .Version }}_Linux_x86_64.tar.gz
+      linux,arm64: crush_{{ .Version }}_Linux_arm64.tar.gz
     embeddedBinaryPath:
-      darwin,amd64: "yazi-x86_64-apple-darwin/yazi"
-      darwin,arm64: "yazi-aarch64-apple-darwin/yazi"
-      linux,amd64: "yazi-x86_64-unknown-linux-gnu/yazi"
-      linux,arm64: "yazi-aarch64-unknown-linux-gnu/yazi"
+      darwin,amd64: crush_{{ .Version }}_Darwin_x86_64/crush
+      darwin,arm64: crush_{{ .Version }}_Darwin_arm64/crush
+      linux,amd64: crush_{{ .Version }}_Linux_x86_64/crush
+      linux,arm64: crush_{{ .Version }}_Linux_arm64/crush
   program:
     versionArgs: [--version]
     versionRegex: \d+\.\d+\.\d+
