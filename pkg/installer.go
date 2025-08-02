@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -18,60 +19,104 @@ type Installer struct {
 	GitHubClient github.Client
 }
 
-func (i *Installer) Install(context *Context, out io.Writer) error {
-	slog.Info("Installing configured packages")
+func (i *Installer) Install(gCtx *GrabContext, packageName string, out io.Writer) error {
+	ctx := context.Background()
+	if packageName != "" {
+		slog.InfoContext(ctx, "Installing specific package", "package", packageName)
+	} else {
+		slog.InfoContext(ctx, "Installing configured packages")
+	}
 
-	err := context.EnsureBinPathExists()
+	err := gCtx.EnsureBinPathExists()
 	if err != nil {
 		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
 	}
 
-	for _, binary := range context.Binaries {
-		destPath := path.Join(context.BinPath, binary.Name)
-		// if destination file exists
-		_, err := os.Stat(destPath)
-		if err == nil {
-			currentVersion, err := getCurrentVersion(destPath, binary)
-			if err != nil {
-				return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
-			}
+	binariesToProcess, err := i.getBinariesToProcess(gCtx, packageName)
+	if err != nil {
+		return err
+	}
 
-			if binary.ShouldReplace(currentVersion) {
-				fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.PinnedVersion, currentVersion)
-			} else {
-				fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
-
-				continue
-			}
-		} else {
-			fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
-		}
-
-		data, err := fetchExecutable(i.GitHubClient, context, binary)
-		if err != nil {
-			return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
-		}
-
-		err = writeToDisk(binary, &data, destPath)
+	for _, binary := range binariesToProcess {
+		err := i.installBinary(gCtx, binary, out)
 		if err != nil {
 			return err
 		}
-
-		fmt.Fprintln(out, " Done!")
 	}
 
 	return nil
 }
 
-func fetchExecutable(ghClient github.Client, context *Context, binary *Binary) ([]byte, error) {
-	slog.Info("Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
+func (i *Installer) getBinariesToProcess(gCtx *GrabContext, packageName string) ([]*Binary, error) {
+	if packageName != "" {
+		foundBinary := i.findBinaryByName(gCtx.Binaries, packageName)
+		if foundBinary == nil {
+			return nil, errors.New("package definition for " + packageName + " not found")
+		}
 
-	asset, err := binary.GetAssetFileName(context.Platform, context.Architecture)
+		return []*Binary{foundBinary}, nil
+	}
+
+	return gCtx.Binaries, nil
+}
+
+func (i *Installer) findBinaryByName(binaries []*Binary, packageName string) *Binary {
+	for _, binary := range binaries {
+		if binary.Name == packageName {
+			return binary
+		}
+	}
+
+	return nil
+}
+
+func (i *Installer) installBinary(gCtx *GrabContext, binary *Binary, out io.Writer) error {
+	destPath := path.Join(gCtx.BinPath, binary.Name)
+
+	// if destination file exists
+	_, err := os.Stat(destPath)
+	if err == nil {
+		currentVersion, err := getCurrentVersion(destPath, binary)
+		if err != nil {
+			return fmt.Errorf("failed to determine current version of %q: %w", binary.Name, err)
+		}
+
+		if binary.ShouldReplace(currentVersion) {
+			fmt.Fprintf(out, "%s: installing %s over %s...", binary.Name, binary.PinnedVersion, currentVersion)
+		} else {
+			fmt.Fprintf(out, "%s: %s already installed\n", binary.Name, currentVersion)
+
+			return nil
+		}
+	} else {
+		fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
+	}
+
+	data, err := fetchExecutable(i.GitHubClient, gCtx, binary)
+	if err != nil {
+		return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
+	}
+
+	err = writeToDisk(binary, &data, destPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(out, " Done!")
+
+	return nil
+}
+
+func fetchExecutable(ghClient github.Client, gCtx *GrabContext, binary *Binary) ([]byte, error) {
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
+
+	asset, err := binary.GetAssetFileName(gCtx.Platform, gCtx.Architecture)
 	if err != nil {
 		return nil, fmt.Errorf("error getting asset filename: %w", err)
 	}
 
-	embeddedBinaryPath, err := binary.GetEmbeddedBinaryPath(context.Platform, context.Architecture)
+	embeddedBinaryPath, err := binary.GetEmbeddedBinaryPath(gCtx.Platform, gCtx.Architecture)
 	if err != nil {
 		return nil, fmt.Errorf("error getting embedded binary path: %w", err)
 	}
@@ -125,8 +170,9 @@ func extractExecutable(binary, asset string, data *[]byte) ([]byte, error) {
 }
 
 func getCurrentVersion(destPath string, binary *Binary) (string, error) {
+	ctx := context.Background()
 	//nolint:gosec
-	cmd := exec.Command(destPath, binary.VersionArgs...)
+	cmd := exec.CommandContext(ctx, destPath, binary.VersionArgs...)
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -150,7 +196,8 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	// i.e. memory mounted
 	destDir := path.Dir(destPath)
 	tempPath := path.Join(destDir, ".grab-temp-"+binary.Name)
-	slog.Debug("Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
 
 	// Ensure temp path is clear
 	err := removeFileIfPresent(tempPath)
@@ -181,7 +228,8 @@ func tryRemoveFromFilesystem(path string) {
 	if err == nil {
 		err := os.Remove(path)
 		if err != nil {
-			slog.Warn("Failed to remove file", "path", path)
+			ctx := context.Background()
+			slog.WarnContext(ctx, "Failed to remove file", "path", path)
 		}
 	}
 }

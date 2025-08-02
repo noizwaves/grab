@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -19,7 +20,7 @@ const (
 	repositoryDirName = "repository"
 )
 
-type Context struct {
+type GrabContext struct {
 	Binaries     []*Binary
 	BinPath      string
 	ConfigPath   string
@@ -29,8 +30,9 @@ type Context struct {
 	Architecture string
 }
 
-func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
-	slog.Debug("Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
+func NewGrabContext(configPathOverride, binPathOverride string) (*GrabContext, error) {
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Runtime information", "platform", runtime.GOOS, "architecture", runtime.GOARCH)
 
 	configPath, err := getConfigDirPath(configPathOverride)
 	if err != nil {
@@ -72,7 +74,7 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 		binaries = append(binaries, binary)
 	}
 
-	return &Context{
+	return &GrabContext{
 		Binaries:     binaries,
 		BinPath:      binPath,
 		ConfigPath:   configFilePath,
@@ -83,8 +85,8 @@ func NewContext(configPathOverride, binPathOverride string) (*Context, error) {
 	}, err
 }
 
-func (c *Context) EnsureBinPathExists() error {
-	err := os.MkdirAll(c.BinPath, 0o755) //nolint:mnd
+func (gc *GrabContext) EnsureBinPathExists() error {
+	err := os.MkdirAll(gc.BinPath, 0o755) //nolint:mnd
 	if err != nil {
 		return fmt.Errorf("error creating bin path directory: %w", err)
 	}
@@ -92,8 +94,8 @@ func (c *Context) EnsureBinPathExists() error {
 	return nil
 }
 
-func (c *Context) SavePackage(packageConfig *ConfigPackage) (string, error) {
-	packagePath := path.Join(c.RepoPath, packageConfig.Metadata.Name+".yml")
+func (gc *GrabContext) SavePackage(packageConfig *ConfigPackage) (string, error) {
+	packagePath := path.Join(gc.RepoPath, packageConfig.Metadata.Name+".yml")
 
 	err := savePackage(packageConfig, packagePath)
 	if err != nil {
@@ -113,13 +115,15 @@ func getPackageNames(repository *repository) []string {
 }
 
 func locatePackage(repository *repository, name string) (*ConfigPackage, error) {
-	slog.Debug("Looking for configured package in repository", "name", name)
+	ctx := context.Background()
+	slog.DebugContext(ctx, "Looking for configured package in repository", "name", name)
 
 	idx := slices.IndexFunc(repository.Packages, func(p *ConfigPackage) bool { return p.Metadata.Name == name })
 	if idx == -1 {
-		slog.Error("Package missing from repository", "name", name)
+		ctx := context.Background()
+		slog.ErrorContext(ctx, "Package missing from repository", "name", name)
 
-		slog.Debug("Repository contains", "packageNames", getPackageNames(repository))
+		slog.DebugContext(ctx, "Repository contains", "packageNames", getPackageNames(repository))
 
 		return nil, fmt.Errorf("package %q missing from repository", name)
 	}

@@ -1,109 +1,77 @@
 {
 	"meta": {
-		"generatedAt": "2025-07-27T19:12:09.102Z",
-		"tasksAnalyzed": 12,
-		"totalTasks": 20,
-		"analysisCount": 12,
+		"generatedAt": "2025-07-31T04:02:18.830Z",
+		"tasksAnalyzed": 8,
+		"totalTasks": 28,
+		"analysisCount": 8,
 		"thresholdScore": 5,
 		"projectName": "Task Master",
 		"usedResearch": true
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 9,
-			"taskTitle": "Create import command structure and CLI interface",
-			"complexityScore": 4,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down the CLI command creation into: command structure setup, argument validation implementation, URL format validation, and integration with existing root command structure",
-			"reasoning": "Straightforward CLI implementation using existing Cobra patterns. Well-defined scope with clear validation requirements. Moderate complexity due to URL validation logic and integration needs."
-		},
-		{
-			"taskId": 10,
-			"taskTitle": "Implement GitHub release URL parsing and validation",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Divide into: URL parsing logic implementation, GitHub URL format validation, org/repo/version extraction, support for different URL formats (tag vs latest), and comprehensive error handling for malformed URLs",
-			"reasoning": "Higher complexity due to multiple URL format support and edge case handling. Requires robust parsing logic and comprehensive validation. Critical foundation component for entire import feature."
-		},
-		{
-			"taskId": 11,
-			"taskTitle": "Enhance GitHub API client for release data fetching",
-			"complexityScore": 7,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Split into: GitHub API client extension, GetReleaseByTag method implementation, GetLatestRelease method implementation, asset metadata fetching, authentication handling, and comprehensive error handling for API failures",
-			"reasoning": "Complex due to API integration, authentication, error handling for various failure modes (404s, rate limits, network issues), and asset metadata processing. Requires robust implementation for production use."
-		},
-		{
-			"taskId": 12,
-			"taskTitle": "Implement release name pattern detection",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break into: tag pattern analysis logic, regular expression generation, Go template pattern creation, pattern validation and consistency checking, and edge case handling for irregular naming",
-			"reasoning": "High complexity due to pattern recognition algorithms, regex generation, and template validation. Requires handling diverse naming conventions and ensuring generated patterns are reliable and unambiguous."
-		},
-		{
-			"taskId": 13,
-			"taskTitle": "Develop asset filename pattern recognition",
+			"taskId": 21,
+			"taskTitle": "Set up comprehensive test infrastructure for TDD workflow",
 			"complexityScore": 8,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Divide into: asset filename analysis, platform-specific pattern detection, naming convention parsing, platform alias handling, filename template generation, and validation for complete platform coverage",
-			"reasoning": "Very high complexity due to diverse naming conventions across projects, platform alias resolution, and requirement to handle all target platforms. Critical for successful package generation with many edge cases."
+			"expansionPrompt": "Break down the test infrastructure setup into: creating mock interfaces for GitHub API client, setting up file system operation mocks, creating test data fixtures and sample configs, extending pkg/internal/assert with installation-specific helpers, implementing mock network operations, and validating the test infrastructure doesn't break existing tests.",
+			"reasoning": "High complexity due to the need to create comprehensive mocking infrastructure across multiple systems (GitHub API, filesystem, network). Requires deep understanding of existing test patterns and careful integration to avoid breaking current tests. Foundation task that other TDD tasks depend on."
 		},
 		{
-			"taskId": 14,
-			"taskTitle": "Create version regex generation logic",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Split into: version string analysis implementation, semantic versioning regex generation, pre-release and build metadata handling, and regex pattern validation against known versions",
-			"reasoning": "Moderate-high complexity requiring deep understanding of versioning schemes. Need to generate reliable regex patterns that work with grab's existing version matching while handling various formats."
-		},
-		{
-			"taskId": 15,
-			"taskTitle": "Implement program version detection",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break down into: version argument detection logic, binary execution with timeout handling, version output parsing, regex generation for output formats, and selection of most reliable version detection method",
-			"reasoning": "Complex due to binary execution, timeout handling, and parsing diverse version output formats. Requires robust execution environment and careful handling of external process execution."
-		},
-		{
-			"taskId": 16,
-			"taskTitle": "Create binary path detection and configuration",
+			"taskId": 22,
+			"taskTitle": "Implement command argument parsing with TDD for optional package name",
 			"complexityScore": 5,
 			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divide into: archive structure analysis, binary path detection algorithms, cross-platform path consistency validation, and embeddedBinaryPath configuration generation",
-			"reasoning": "Moderate complexity requiring archive analysis and path detection logic. Need to handle various archive structures while ensuring cross-platform consistency."
+			"expansionPrompt": "Split into TDD-driven subtasks: writing failing tests for argument parsing scenarios (0, 1, multiple args), implementing Cobra command extension with MaximumNArgs(1), adding argument validation and error handling, and updating help text and documentation following existing patterns.",
+			"reasoning": "Medium complexity as it involves extending existing Cobra command structure with proper validation. Well-defined scope with clear patterns to follow from cmd/update.go. TDD approach adds structure but implementation is straightforward."
 		},
 		{
-			"taskId": 17,
-			"taskTitle": "Develop package YAML specification generator",
+			"taskId": 23,
+			"taskTitle": "Implement package resolution logic with dual lookup strategy",
 			"complexityScore": 7,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Split into: YAML structure generation, pattern integration logic, grab package schema compliance, YAML formatting and validation, and comprehensive output verification",
-			"reasoning": "High complexity as this integrates all previous detection results into final output. Must ensure perfect compliance with grab's package format and handle all detected patterns correctly."
+			"expansionPrompt": "Decompose into: implementing primary config.yml lookup logic, creating secondary repository definition lookup, designing the resolvePackage function with proper error handling, implementing descriptive error messages following specified formats, and extracting common resolution logic for reuse between commands.",
+			"reasoning": "Higher complexity due to dual lookup strategy requiring coordination between config and repository systems. Error handling must be comprehensive with specific message formats. Logic needs to be extractable for reuse, adding architectural considerations."
 		},
 		{
-			"taskId": 18,
-			"taskTitle": "Implement comprehensive error handling and validation",
+			"taskId": 24,
+			"taskTitle": "Modify installer logic to support single package installation",
 			"complexityScore": 6,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Break into: error scenario identification, actionable error message creation, exit code implementation, fast-fail validation logic, and edge case error handling",
-			"reasoning": "Moderately complex requiring comprehensive understanding of all failure modes. Critical for user experience and must provide clear guidance for resolution."
+			"expansionPrompt": "Break into: analyzing existing installer logic and identifying modification points, implementing package filtering before installation loop, creating filtered installation workflow while preserving batch functionality, extracting common installation logic into reusable functions, and ensuring identical behavior for version checking, downloading, and extraction.",
+			"reasoning": "Moderate-high complexity requiring careful modification of existing installer logic without breaking batch functionality. Need to maintain code reuse while adding filtering capability. Critical to preserve all existing behaviors."
 		},
 		{
-			"taskId": 19,
-			"taskTitle": "Create file system integration for package repository",
-			"complexityScore": 4,
+			"taskId": 25,
+			"taskTitle": "Implement comprehensive error handling for selective installation",
+			"complexityScore": 6,
 			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divide into: repository path resolution, directory creation logic, atomic file writing implementation, and file operation error handling",
-			"reasoning": "Moderate complexity with well-defined file operations. Requires atomic operations and proper error handling but follows standard patterns."
+			"expansionPrompt": "Structure as: implementing standardized error message formats matching existing patterns, handling specific error scenarios (package not found, missing repository definitions, network failures), implementing graceful error handling with proper exit codes, and adding error context and debugging support.",
+			"reasoning": "Moderate-high complexity due to the need for comprehensive error coverage across multiple failure modes. Requires consistency with existing error patterns while adding new scenarios. Error message formatting must be precise and user-friendly."
 		},
 		{
-			"taskId": 20,
-			"taskTitle": "Add integration testing and end-to-end validation",
+			"taskId": 26,
+			"taskTitle": "Ensure output consistency between single and batch installation modes",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Organize into: analyzing existing output patterns and creating shared formatting functions, implementing consistent progress indicators and status reporting across modes, and validating output format consistency through comprehensive testing.",
+			"reasoning": "Lower-medium complexity focused on output consistency. Well-defined scope with existing patterns to follow. Main challenge is ensuring no regression in existing output while maintaining consistency."
+		},
+		{
+			"taskId": 27,
+			"taskTitle": "Create comprehensive integration test suite",
 			"complexityScore": 8,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Split into: real GitHub repository test setup, end-to-end workflow testing, generated package validation with grab install, failure scenario testing, CI-friendly test implementation, and performance benchmarking",
-			"reasoning": "Very high complexity due to end-to-end testing requirements, real external dependencies, performance requirements, and need to validate entire workflow functionality. Critical for ensuring production readiness."
+			"expansionPrompt": "Structure as: creating end-to-end workflow tests for complete installation scenarios, implementing GitHub API integration tests with mock responses, developing configuration and repository definition integration tests, creating cross-platform compatibility tests, implementing performance regression tests, and developing realistic test scenarios with temporary environments.",
+			"reasoning": "High complexity due to comprehensive integration testing requirements across multiple systems. Needs to test real workflows while being deterministic. Performance testing and cross-platform considerations add complexity."
+		},
+		{
+			"taskId": 28,
+			"taskTitle": "Validate backward compatibility and finalize implementation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down into: running comprehensive regression testing against existing functionality, validating all success criteria including test coverage targets, conducting performance benchmark comparisons, completing code quality validation and review preparation, and performing final user acceptance testing scenarios.",
+			"reasoning": "High complexity as final validation task requiring comprehensive testing across all dimensions. Must ensure zero breaking changes while meeting all success criteria. Performance validation and code quality checks add thoroughness requirements."
 		}
 	]
 }

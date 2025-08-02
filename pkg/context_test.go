@@ -29,7 +29,7 @@ func makeEmptyConfig(t *testing.T) string {
 	return dir
 }
 
-func TestNewContext(t *testing.T) {
+func TestNewGrabContext(t *testing.T) {
 	// Use simple as $HOME
 	t.Setenv("HOME", "../testdata/simple")
 
@@ -37,7 +37,7 @@ func TestNewContext(t *testing.T) {
 	emptyConfigDir := makeEmptyConfig(t)
 
 	t.Run("NoOverrides", func(t *testing.T) {
-		result, err := NewContext("", "")
+		result, err := NewGrabContext("", "")
 
 		assert.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestNewContext(t *testing.T) {
 	t.Run("ConfigOverride", func(t *testing.T) {
 		override := path.Join(emptyConfigDir, ".grab")
 
-		result, err := NewContext(override, "")
+		result, err := NewGrabContext(override, "")
 		assert.NoError(t, err)
 
 		assert.Equal(t, result.ConfigPath, path.Join(emptyConfigDir, ".grab/config.yml"))
@@ -75,7 +75,7 @@ func TestNewContext(t *testing.T) {
 	t.Run("BinOverride", func(t *testing.T) {
 		override := t.TempDir()
 
-		result, err := NewContext("", override)
+		result, err := NewGrabContext("", override)
 		assert.NoError(t, err)
 
 		assert.Equal(t, result.ConfigPath, path.Join("../testdata/simple/.grab/config.yml"))

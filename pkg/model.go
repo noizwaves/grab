@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -120,8 +121,9 @@ func (b *Binary) GetReleaseName() (string, error) {
 
 func (b *Binary) ShouldReplace(currentVersion string) bool {
 	result := b.PinnedVersion != currentVersion
-	slog.Info("Checking if installed binary should be replaced", "name", b.Name, "replace", result)
-	slog.Debug("Version information", "name", b.Name, "current", currentVersion, "desired", b.PinnedVersion)
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Checking if installed binary should be replaced", "name", b.Name, "replace", result)
+	slog.DebugContext(ctx, "Version information", "name", b.Name, "current", currentVersion, "desired", b.PinnedVersion)
 
 	return result
 }

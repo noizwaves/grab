@@ -1,0 +1,267 @@
+# Product Requirements Document: Selective Package Installation with TDD Implementation
+
+## Executive Summary
+
+Enhance the existing `grab install` command to accept an optional package name argument, enabling users to install specific packages instead of installing all packages in their configuration file. This feature will be implemented using Test-Driven Development methodology to ensure robust, reliable functionality.
+
+## Background
+
+Currently, the `grab install` command installs all packages defined in the user's configuration file (`~/.grab/config.yml`) that are either missing or need updating based on their pinned versions. This enhancement will provide users with more granular control by allowing them to install individual packages when needed, following the same pattern established by the `grab update [package-name]` command.
+
+## Goals
+
+- Provide users with the ability to install specific packages selectively
+- Maintain backward compatibility with existing functionality (install all packages by default)
+- Preserve consistent user experience and output formatting with existing commands
+- Implement using TDD methodology to ensure comprehensive test coverage and reliable functionality
+- Follow established patterns from the `grab update` command implementation
+
+## Requirements
+
+### Functional Requirements
+
+#### Command Interface
+```bash
+# Existing behavior (unchanged)
+grab install
+
+# New behavior
+grab install [package-name]
+```
+
+#### Behavior Specification
+
+**Default behavior (no arguments):**
+- Installs all packages defined in `~/.grab/config.yml` that need installation or updating
+- Maintains existing functionality without changes
+- Preserves current installation logic and output formatting
+
+**Single package behavior:**
+- Installs only the specified package from the user's configuration
+- Performs exact string match against package names in `~/.grab/config.yml`
+- Uses case-sensitive matching
+- Only operates on packages already present in user's configuration
+- Respects pinned versions from configuration (same as current behavior)
+- Follows same installation logic as batch installation
+
+#### Package Resolution Strategy
+1. **Primary lookup**: Check if package name exists as a key in `~/.grab/config.yml`
+2. **Secondary lookup**: If not found, check if it matches any package definition name in `~/.grab/repository/`
+3. **Validation**: Ensure the resolved package exists in both config and repository definitions
+4. **Error handling**: Clear error message if package cannot be resolved
+
+#### Error Handling
+
+**Package not found in config:**
+- Command must terminate with descriptive error message
+- Format: `package "package-name" not found in configuration`
+
+**Package not found in repository:**
+- Command must terminate with descriptive error message
+- Format: `package "package-name" configuration found but no repository definition exists`
+
+**Invalid input:**
+- Standard error handling for malformed package names
+- Preserve existing error handling patterns
+
+**Configuration errors:**
+- Existing error handling patterns remain unchanged
+
+### Technical Requirements
+
+#### Configuration Scope
+- Only operates on packages present in user's `~/.grab/config.yml`
+- Does not add new packages to configuration
+- Must validate against both config and repository definitions
+- Uses existing package resolution and installation logic
+
+#### Validation Strategy
+- Validate package name exists in user configuration before processing
+- Validate corresponding repository definition exists
+- Implement fail-fast behavior with clear error messaging
+- Follow existing validation patterns from update command
+
+#### Output Consistency
+- Maintain identical output format between single-package and all-package installation
+- Preserve existing logging patterns, progress indicators, and status reporting
+- Use same success/failure messaging format as batch installation
+- Follow output patterns established by `grab update [package-name]`
+
+#### Backward Compatibility
+- Zero breaking changes to existing `grab install` command behavior
+- Maintain existing command interface and output for current users
+- Preserve all existing functionality and performance characteristics
+
+## Test Strategy & Acceptance Criteria (TDD Focus)
+
+### Unit Test Scenarios
+
+#### Command Parsing Tests
+- ✅ `grab install` with no arguments uses existing behavior
+- ✅ `grab install package-name` parses package name correctly
+- ✅ `grab install package-name extra-arg` handles excess arguments appropriately
+- ✅ Command help text includes new usage pattern
+
+#### Package Resolution Tests
+- ✅ Valid package name in config resolves correctly
+- ✅ Valid package name matching repository definition resolves correctly
+- ✅ Package in config but missing repository definition fails with clear error
+- ✅ Package not in config fails with clear error
+- ✅ Empty package name handled gracefully
+- ✅ Package name with special characters handled correctly
+
+#### Installation Logic Tests
+- ✅ Single package installation follows same logic as batch installation
+- ✅ Version checking works identically for single vs batch
+- ✅ File downloading and extraction work for single package
+- ✅ Binary placement in `~/.local/bin/` works correctly
+- ✅ Permissions set correctly (755) for installed binary
+- ✅ Existing binary replacement logic works for single package
+
+#### Error Handling Tests
+- ✅ Network failures during single package install handled gracefully
+- ✅ GitHub API rate limit errors handled consistently
+- ✅ Archive extraction errors handled consistently
+- ✅ File system permission errors handled consistently
+- ✅ Invalid package configurations handled consistently
+
+### Integration Test Scenarios
+
+#### End-to-End Workflow Tests
+- ✅ Complete single package installation workflow
+- ✅ Installation of package that requires update of existing binary
+- ✅ Installation of package that's already up to date
+- ✅ Mixed workflow: update config with `grab update package`, then install with `grab install package`
+
+#### Configuration Integration Tests
+- ✅ Works with various config file formats and structures
+- ✅ Handles missing config file gracefully
+- ✅ Works with different repository definition structures
+- ✅ Handles template variable resolution correctly
+
+#### Output Integration Tests
+- ✅ Output format matches existing installation output
+- ✅ Progress reporting works consistently
+- ✅ Error messages maintain consistent formatting
+- ✅ Success messages follow established patterns
+
+### Mock/Stub Requirements for TDD
+
+#### External Dependencies to Mock
+- **GitHub API Client**: Mock `github.Client` interface for consistent testing
+- **File System Operations**: Mock file operations for deterministic tests
+- **Network Operations**: Mock download operations to avoid external dependencies
+- **Command Execution**: Mock binary version checking for predictable tests
+
+#### Test Data Requirements
+- Sample config files with various package configurations
+- Sample repository definition files
+- Mock GitHub API responses for different scenarios
+- Sample binary files for extraction testing
+
+## Implementation Notes (TDD Workflow)
+
+### TDD Development Phases
+
+#### Phase 1: Command Interface (Red-Green-Refactor)
+1. **Red**: Write failing tests for command argument parsing
+2. **Green**: Implement minimal argument parsing in `cmd/install.go`
+3. **Refactor**: Clean up argument handling and add proper validation
+
+#### Phase 2: Package Resolution (Red-Green-Refactor)
+1. **Red**: Write failing tests for package name resolution
+2. **Green**: Implement package lookup logic in installer
+3. **Refactor**: Extract reusable package resolution methods
+
+#### Phase 3: Installation Logic (Red-Green-Refactor)
+1. **Red**: Write failing tests for single package installation flow
+2. **Green**: Modify installer to handle single package installation
+3. **Refactor**: Consolidate shared logic between single and batch installation
+
+#### Phase 4: Error Handling (Red-Green-Refactor)
+1. **Red**: Write failing tests for various error conditions
+2. **Green**: Implement comprehensive error handling
+3. **Refactor**: Standardize error message formats and handling
+
+#### Phase 5: Integration Testing
+1. **Red**: Write failing integration tests for complete workflows
+2. **Green**: Ensure all integration scenarios pass
+3. **Refactor**: Optimize performance and clean up code
+
+### Technical Implementation Guidance
+
+#### Code Structure Changes
+- Extend `cmd/install.go` to accept optional package name argument
+- Modify `pkg/installer.go` to support filtered installation
+- Follow patterns established in `cmd/update.go` and `pkg/updater.go`
+- Maintain separation of concerns between CLI and business logic
+
+#### Testing Infrastructure
+- Extend existing test helpers in `pkg/internal/assert/`
+- Create comprehensive mock GitHub client for testing
+- Use existing testify framework patterns
+- Ensure tests run independently without external dependencies
+
+#### Code Quality Requirements
+- Maintain existing linting standards (`golangci-lint`)
+- Follow established Go coding conventions in codebase
+- Ensure proper error handling using `errors.New` (not `fmt.Errorf`)
+- Add comprehensive inline documentation
+
+## Success Criteria
+
+1. ✅ Users can successfully install individual packages using `grab install [package-name]`
+2. ✅ Existing `grab install` behavior remains completely unchanged
+3. ✅ Clear error messages are displayed for invalid package names
+4. ✅ Output formatting remains consistent across both usage patterns
+5. ✅ No regression in existing functionality or performance
+6. ✅ Comprehensive test coverage (>90%) for new functionality
+7. ✅ All tests pass consistently in CI/CD pipeline
+8. ✅ TDD methodology followed throughout implementation
+9. ✅ Code review standards met for production readiness
+
+## Development Roadmap (TDD Cycles)
+
+### Sprint 1: Foundation
+- Set up comprehensive test infrastructure
+- Implement basic command argument parsing with TDD
+- Create package resolution logic with full test coverage
+
+### Sprint 2: Core Installation Logic
+- Implement single package installation workflow using TDD
+- Add comprehensive error handling with test coverage
+- Ensure output consistency with existing commands
+
+### Sprint 3: Integration & Polish
+- Complete integration testing scenarios
+- Performance testing and optimization
+- Documentation updates and code cleanup
+- Final validation against success criteria
+
+## Risks and Mitigations
+
+### Technical Challenges
+- **Risk**: Complex interaction between config and repository definitions
+- **Mitigation**: Comprehensive unit tests for package resolution logic
+
+- **Risk**: Maintaining output consistency across different installation modes
+- **Mitigation**: Shared output formatting functions and integration tests
+
+### TDD Implementation Risks
+- **Risk**: Over-testing leading to brittle test suite
+- **Mitigation**: Focus on behavior-driven tests rather than implementation details
+
+- **Risk**: Insufficient test coverage for edge cases
+- **Mitigation**: Comprehensive test scenario planning and coverage monitoring
+
+## Appendix
+
+### Reference Implementation Patterns
+- Study `cmd/update.go` and `pkg/updater.go` for established patterns
+- Follow error handling conventions from existing codebase
+- Maintain consistency with Cobra CLI framework usage
+
+### Testing Resources
+- Existing test infrastructure in `pkg/internal/github/` for mocking
+- Test helpers in `pkg/internal/assert/` for assertions
+- Testify framework patterns used throughout codebase
