@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	stdcontext "context"
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -13,19 +13,19 @@ type Updater struct {
 	GitHubClient github.Client
 }
 
-func (u *Updater) Update(context *GrabContext, packageName string, out io.Writer) error {
-	ctx := stdcontext.Background()
+func (u *Updater) Update(gCtx *GrabContext, packageName string, out io.Writer) error {
+	ctx := context.Background()
 	// Validate package name if specified
 	if packageName != "" {
-		if _, exists := context.Config.Packages[packageName]; !exists {
+		if _, exists := gCtx.Config.Packages[packageName]; !exists {
 			return fmt.Errorf("package %q not found in configuration", packageName)
 		}
 
 		slog.InfoContext(ctx, "Updating specific package", "package", packageName)
 	} else {
 		// Check if any packages are configured
-		if len(context.Config.Packages) == 0 {
-			return fmt.Errorf("no packages configured in %s", context.ConfigPath)
+		if len(gCtx.Config.Packages) == 0 {
+			return fmt.Errorf("no packages configured in %s", gCtx.ConfigPath)
 		}
 
 		slog.InfoContext(ctx, "Updating all configured packages")
@@ -33,7 +33,7 @@ func (u *Updater) Update(context *GrabContext, packageName string, out io.Writer
 
 	dirty := false
 
-	binariesToProcess := u.filterBinaries(context.Binaries, packageName)
+	binariesToProcess := u.filterBinaries(gCtx.Binaries, packageName)
 
 	for _, binary := range binariesToProcess {
 		latestRelease, err := u.GitHubClient.GetLatestRelease(binary.Org, binary.Repo)
@@ -53,12 +53,12 @@ func (u *Updater) Update(context *GrabContext, packageName string, out io.Writer
 
 			dirty = true
 
-			setBinaryVersion(context.Config, binary.Name, latestVersion)
+			setBinaryVersion(gCtx.Config, binary.Name, latestVersion)
 		}
 	}
 
 	if dirty {
-		err := saveConfig(context.Config, context.ConfigPath)
+		err := saveConfig(gCtx.Config, gCtx.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("error updating config file: %w", err)
 		}

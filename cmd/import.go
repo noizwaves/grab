@@ -24,7 +24,7 @@ func makeImportCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
-			context, err := newContext()
+			gCtx, err := newGrabContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
 			}
@@ -39,7 +39,7 @@ func makeImportCommand() *cobra.Command {
 
 			importer := importer.NewImporter(github.NewClient())
 
-			err = importer.Import(context, inputURL, os.Stdout)
+			err = importer.Import(gCtx, inputURL, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}

@@ -20,7 +20,7 @@ func makeUpdateCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
-			context, err := newContext()
+			gCtx, err := newGrabContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
 			}
@@ -34,7 +34,7 @@ func makeUpdateCommand() *cobra.Command {
 				packageName = args[0]
 			}
 
-			err = updater.Update(context, packageName, os.Stdout)
+			err = updater.Update(gCtx, packageName, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error upgrading: %w", err)
 			}

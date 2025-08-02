@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"bytes"
-	stdcontext "context"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -19,26 +19,26 @@ type Installer struct {
 	GitHubClient github.Client
 }
 
-func (i *Installer) Install(context *GrabContext, packageName string, out io.Writer) error {
-	ctx := stdcontext.Background()
+func (i *Installer) Install(gCtx *GrabContext, packageName string, out io.Writer) error {
+	ctx := context.Background()
 	if packageName != "" {
 		slog.InfoContext(ctx, "Installing specific package", "package", packageName)
 	} else {
 		slog.InfoContext(ctx, "Installing configured packages")
 	}
 
-	err := context.EnsureBinPathExists()
+	err := gCtx.EnsureBinPathExists()
 	if err != nil {
 		return fmt.Errorf("bin path needs to exist before attempting install: %w", err)
 	}
 
-	binariesToProcess, err := i.getBinariesToProcess(context, packageName)
+	binariesToProcess, err := i.getBinariesToProcess(gCtx, packageName)
 	if err != nil {
 		return err
 	}
 
 	for _, binary := range binariesToProcess {
-		err := i.installBinary(context, binary, out)
+		err := i.installBinary(gCtx, binary, out)
 		if err != nil {
 			return err
 		}
@@ -47,9 +47,9 @@ func (i *Installer) Install(context *GrabContext, packageName string, out io.Wri
 	return nil
 }
 
-func (i *Installer) getBinariesToProcess(context *GrabContext, packageName string) ([]*Binary, error) {
+func (i *Installer) getBinariesToProcess(gCtx *GrabContext, packageName string) ([]*Binary, error) {
 	if packageName != "" {
-		foundBinary := i.findBinaryByName(context.Binaries, packageName)
+		foundBinary := i.findBinaryByName(gCtx.Binaries, packageName)
 		if foundBinary == nil {
 			return nil, errors.New("package definition for " + packageName + " not found")
 		}
@@ -57,7 +57,7 @@ func (i *Installer) getBinariesToProcess(context *GrabContext, packageName strin
 		return []*Binary{foundBinary}, nil
 	}
 
-	return context.Binaries, nil
+	return gCtx.Binaries, nil
 }
 
 func (i *Installer) findBinaryByName(binaries []*Binary, packageName string) *Binary {
@@ -70,8 +70,8 @@ func (i *Installer) findBinaryByName(binaries []*Binary, packageName string) *Bi
 	return nil
 }
 
-func (i *Installer) installBinary(context *GrabContext, binary *Binary, out io.Writer) error {
-	destPath := path.Join(context.BinPath, binary.Name)
+func (i *Installer) installBinary(gCtx *GrabContext, binary *Binary, out io.Writer) error {
+	destPath := path.Join(gCtx.BinPath, binary.Name)
 
 	// if destination file exists
 	_, err := os.Stat(destPath)
@@ -92,7 +92,7 @@ func (i *Installer) installBinary(context *GrabContext, binary *Binary, out io.W
 		fmt.Fprintf(out, "%s: installing %s...", binary.Name, binary.PinnedVersion)
 	}
 
-	data, err := fetchExecutable(i.GitHubClient, context, binary)
+	data, err := fetchExecutable(i.GitHubClient, gCtx, binary)
 	if err != nil {
 		return fmt.Errorf("error executable binary for %s: %w", binary.Name, err)
 	}
@@ -107,16 +107,16 @@ func (i *Installer) installBinary(context *GrabContext, binary *Binary, out io.W
 	return nil
 }
 
-func fetchExecutable(ghClient github.Client, context *GrabContext, binary *Binary) ([]byte, error) {
-	ctx := stdcontext.Background()
+func fetchExecutable(ghClient github.Client, gCtx *GrabContext, binary *Binary) ([]byte, error) {
+	ctx := context.Background()
 	slog.InfoContext(ctx, "Downloading asset", "binary", binary.Name, "version", binary.PinnedVersion)
 
-	asset, err := binary.GetAssetFileName(context.Platform, context.Architecture)
+	asset, err := binary.GetAssetFileName(gCtx.Platform, gCtx.Architecture)
 	if err != nil {
 		return nil, fmt.Errorf("error getting asset filename: %w", err)
 	}
 
-	embeddedBinaryPath, err := binary.GetEmbeddedBinaryPath(context.Platform, context.Architecture)
+	embeddedBinaryPath, err := binary.GetEmbeddedBinaryPath(gCtx.Platform, gCtx.Architecture)
 	if err != nil {
 		return nil, fmt.Errorf("error getting embedded binary path: %w", err)
 	}
@@ -170,7 +170,7 @@ func extractExecutable(binary, asset string, data *[]byte) ([]byte, error) {
 }
 
 func getCurrentVersion(destPath string, binary *Binary) (string, error) {
-	ctx := stdcontext.Background()
+	ctx := context.Background()
 	//nolint:gosec
 	cmd := exec.CommandContext(ctx, destPath, binary.VersionArgs...)
 
@@ -196,7 +196,7 @@ func writeToDisk(binary *Binary, data *[]byte, destPath string) error {
 	// i.e. memory mounted
 	destDir := path.Dir(destPath)
 	tempPath := path.Join(destDir, ".grab-temp-"+binary.Name)
-	ctx := stdcontext.Background()
+	ctx := context.Background()
 	slog.DebugContext(ctx, "Writing to temporary executable", "binary", binary.Name, "tempPath", tempPath)
 
 	// Ensure temp path is clear
@@ -228,7 +228,7 @@ func tryRemoveFromFilesystem(path string) {
 	if err == nil {
 		err := os.Remove(path)
 		if err != nil {
-			ctx := stdcontext.Background()
+			ctx := context.Background()
 			slog.WarnContext(ctx, "Failed to remove file", "path", path)
 		}
 	}

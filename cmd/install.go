@@ -20,7 +20,7 @@ func makeInstallCommand() *cobra.Command {
 			cobra.CheckErr(err)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
-			context, err := newContext()
+			gCtx, err := newGrabContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
 			}
@@ -34,7 +34,7 @@ func makeInstallCommand() *cobra.Command {
 				packageName = args[0]
 			}
 
-			err = installer.Install(context, packageName, os.Stdout)
+			err = installer.Install(gCtx, packageName, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}
