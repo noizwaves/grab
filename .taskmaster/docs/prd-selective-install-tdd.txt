@@ -203,7 +203,7 @@ grab install [package-name]
 - Ensure tests run independently without external dependencies
 
 #### Code Quality Requirements
-- Maintain existing linting standards (`golangci-lint-v2`)
+- Maintain existing linting standards (`golangci-lint`)
 - Follow established Go coding conventions in codebase
 - Ensure proper error handling using `errors.New` (not `fmt.Errorf`)
 - Add comprehensive inline documentation
