@@ -55,16 +55,17 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 				Org:          releaseURL.Organization,
 				Repo:         releaseURL.Repository,
 				Name:         detectedPackage.releaseName,
-				VersionRegex: "\\d+\\.\\d+\\.\\d+",
+				VersionRegex: detectedPackage.versionRegex,
 				FileName:     detectedPackage.assets,
 
 				// Assume binary is at the root of any archive file
 				EmbeddedBinaryPath: nil,
 			},
 			Program: pkg.ConfigProgram{
-				// Assume binary uses a --version flag
-				VersionArgs:  []string{"--version"},
-				VersionRegex: "\\d+\\.\\d+\\.\\d+",
+				// Assume binary uses a --version flag and not a subcommand
+				VersionArgs: []string{"--version"},
+				// Assume binary printed version regex matches tag regex
+				VersionRegex: detectedPackage.versionRegex,
 			},
 		},
 	}
@@ -80,11 +81,13 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 }
 
 type detectedPackage struct {
-	releaseName string
-	assets      map[string]string
+	releaseName  string
+	versionRegex string
+	assets       map[string]string
 }
 
 func detectPackage(release *github.Release) (*detectedPackage, error) {
+	// Release name pattern
 	releaseDetector := NewReleaseNamePatternDetector()
 
 	releasePattern, err := releaseDetector.AnalyzeOne(release.TagName)
@@ -93,6 +96,15 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 	}
 
 	releaseName := releasePattern.Value
+
+	// Version regex
+	versionRegex := DetectVersionRegex(release.TagName)
+
+	// Current version value
+	latestVersion, err := DetectVersionValue(versionRegex, release.TagName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect version: %w", err)
+	}
 
 	fileNames := make(map[string]string)
 
@@ -118,7 +130,7 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 				continue
 			}
 
-			// this asset name matches the current pair!
+			// this asset name matches the current pair
 			result = asset.Name
 
 			break
@@ -128,15 +140,17 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 			return nil, fmt.Errorf("no matching asset name found for platform %s and architecture %s", platform, arch)
 		}
 
-		// parse this asset name for a version number
+		// Convert to a template string if needed
+		result = UnrenderVersionValue(result, latestVersion)
 
 		key := fmt.Sprintf("%s,%s", platform, arch)
 		fileNames[key] = result
 	}
 
 	return &detectedPackage{
-		releaseName: releaseName,
-		assets:      fileNames,
+		releaseName:  releaseName,
+		assets:       fileNames,
+		versionRegex: versionRegex,
 	}, nil
 }
 

@@ -3,6 +3,7 @@ package importer
 import (
 	"errors"
 	"regexp"
+	"strings"
 )
 
 type DetectedPattern struct {
@@ -113,4 +114,39 @@ func (pd *PatternDetector) AnalyzeOne(value string) (*DetectedPattern, error) {
 	}
 
 	return nil, errors.New("no matching pattern found")
+}
+
+// Detecting version
+
+// Version regex detector.
+const defaultVersionRegex = `\d+\.\d+\.\d+`
+
+// DetectVersionRegex returns a version regex for the given tag name.
+// The first argument, tagName, is the release tag name to analyze.
+func DetectVersionRegex(_ string) string {
+	return defaultVersionRegex
+}
+
+// Version detector.
+func DetectVersionValue(versionRegex, tagName string) (string, error) {
+	re := regexp.MustCompile(versionRegex)
+
+	matches := re.FindStringSubmatch(tagName)
+	if len(matches) == 0 {
+		return "", errors.New("no matching version literal found in tag name")
+	}
+
+	return matches[0], nil
+}
+
+// Detect instances of a version literal in a string, returning the template string.
+// Examples:
+// - UnrenderVersionValue("crush_1.2.3.tar.gz", "1.2.3") -> "crush_{{ .Version }}.tar.gz",
+// - UnrenderVersionValue("crush.tar.gz", "1.2.3") -> "crush.tar.gz".
+func UnrenderVersionValue(value, versionLiteral string) string {
+	if versionLiteral != "" && strings.Contains(value, versionLiteral) {
+		return strings.ReplaceAll(value, versionLiteral, "{{ .Version }}")
+	}
+
+	return value
 }
