@@ -2,6 +2,8 @@ package importer
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/noizwaves/grab/pkg"
@@ -11,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestImport_Success_LatestRelease tests importing from a latest release URL.
-func TestImport_Success_LatestRelease(t *testing.T) {
+// Happy path test.
+func TestImport_Success(t *testing.T) {
 	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
 
 	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
@@ -35,42 +37,38 @@ func TestImport_Success_LatestRelease(t *testing.T) {
 	})
 
 	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
+	err = importer.Import(gCtx, "https://github.com/foo/myapp", &out)
 
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), `Package "myapp" saved to`)
 	assert.Contains(t, out.String(), `/myapp.yml`)
-}
 
-// TestImport_Success_TaggedRelease tests importing from a tagged release URL.
-func TestImport_Success_TaggedRelease(t *testing.T) {
-	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
-
-	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mockRelease := &github.Release{
-		TagName: "v1.2.3",
-		Assets: []github.Asset{
-			{Name: "myapp-1.2.3-linux-amd64.tar.gz"},
-			{Name: "myapp-1.2.3-linux-arm64.tar.gz"},
-			{Name: "myapp-1.2.3-darwin-amd64.tar.gz"},
-			{Name: "myapp-1.2.3-darwin-arm64.tar.gz"},
-		},
-	}
-
-	importer := NewImporter(&githubh.MockGitHubClient{
-		Release: mockRelease,
-	})
-
-	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/tag/v1.2.3", &out)
-
+	// Verify the contents of the package YAML file
+	expectedYamlPath := filepath.Join(configDir, "repository", "myapp.yml")
+	actualYaml, err := os.ReadFile(expectedYamlPath)
 	assert.NoError(t, err)
-	assert.Contains(t, out.String(), `Package "myapp" saved to`)
-	assert.Contains(t, out.String(), `/myapp.yml`)
+
+	expectedYaml := `apiVersion: grab.noizwaves.com/v1alpha1
+kind: Package
+metadata:
+  name: myapp
+spec:
+  gitHubRelease:
+    org: foo
+    repo: myapp
+    name: v{{ .Version }}
+    versionRegex: \d+\.\d+\.\d+
+    fileName:
+      darwin,amd64: myapp-{{ .Version }}-darwin-amd64.tar.gz
+      darwin,arm64: myapp-{{ .Version }}-darwin-arm64.tar.gz
+      linux,amd64: myapp-{{ .Version }}-linux-amd64.tar.gz
+      linux,arm64: myapp-{{ .Version }}-linux-arm64.tar.gz
+  program:
+    versionArgs: [--version]
+    versionRegex: \d+\.\d+\.\d+
+`
+
+	assert.Equal(t, expectedYaml, string(actualYaml))
 }
 
 // TestImport_Error_InvalidURL tests error handling for invalid URLs.
