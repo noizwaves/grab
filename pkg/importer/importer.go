@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
@@ -203,29 +204,34 @@ func detectEmbeddedBinaryPaths(
 	embeddedPaths := make(map[string]string)
 
 	for platformArch, assetName := range detectedAssets {
+		// Render the asset name template with version
+		renderedAssetName, err := renderAssetNameTemplate(assetName, versionLiteral)
+		if err != nil {
+			return nil, fmt.Errorf("failed to render asset name template %s: %w", assetName, err)
+		}
 		// Skip non-archive assets - they don't need embedded paths
-		if !isArchiveAsset(assetName) {
+		if !isArchiveAsset(renderedAssetName) {
 			continue
 		}
 
-		slog.DebugContext(ctx, "Analyzing archive asset", "platformArch", platformArch, "asset", assetName)
+		slog.DebugContext(ctx, "Analyzing archive asset", "platformArch", platformArch, "asset", renderedAssetName)
 
 		// Download the asset
-		data, err := ghClient.DownloadReleaseAsset(org, repo, release.TagName, assetName)
+		data, err := ghClient.DownloadReleaseAsset(org, repo, release.TagName, renderedAssetName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to download asset %s for binary detection: %w", assetName, err)
+			return nil, fmt.Errorf("failed to download asset %s for binary detection: %w", renderedAssetName, err)
 		}
 
 		// List archive contents
-		files, err := listArchiveContents(assetName, bytes.NewBuffer(data))
+		files, err := listArchiveContents(renderedAssetName, bytes.NewBuffer(data))
 		if err != nil {
-			return nil, fmt.Errorf("failed to list archive contents for %s: %w", assetName, err)
+			return nil, fmt.Errorf("failed to list archive contents for %s: %w", renderedAssetName, err)
 		}
 
 		// Find binary matching package name
 		binaryPath, err := findBinaryInArchive(files, packageName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to find binary in asset %s: %w", assetName, err)
+			return nil, fmt.Errorf("failed to find binary in asset %s: %w", renderedAssetName, err)
 		}
 
 		// Skip if binary path is just the package name (default path)
@@ -298,4 +304,28 @@ func listArchiveContents(assetName string, data *bytes.Buffer) ([]string, error)
 	default:
 		return nil, errors.New("unsupported archive format: " + assetName)
 	}
+}
+
+type templateViewModel struct {
+	Version string
+}
+
+func renderAssetNameTemplate(assetNameTemplate, versionLiteral string) (string, error) {
+	tmpl, err := template.New("assetName").Parse(assetNameTemplate)
+	if err != nil {
+		return "", fmt.Errorf("error parsing asset name template: %w", err)
+	}
+
+	viewModel := templateViewModel{
+		Version: versionLiteral,
+	}
+
+	var output bytes.Buffer
+
+	err = tmpl.Execute(&output, viewModel)
+	if err != nil {
+		return "", fmt.Errorf("error rendering asset name template: %w", err)
+	}
+
+	return output.String(), nil
 }

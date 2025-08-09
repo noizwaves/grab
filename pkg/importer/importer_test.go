@@ -162,7 +162,7 @@ func TestDetectEmbeddedBinaryPaths(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
 	}
 
 	// Create tar.gz with binary in subdirectory (not at root, so it needs embedded path)
@@ -197,7 +197,7 @@ func TestDetectEmbeddedBinaryPathsWithSubdirectory(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
 	}
 
 	// Create tar.gz with binary in subdirectory (like real hyperfine releases)
@@ -233,7 +233,7 @@ func TestDetectEmbeddedBinaryPathsSkipsNonArchives(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu", // Not an archive
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu", // Not an archive
 	}
 
 	mockClient := &MockGitHubClient{
@@ -256,7 +256,7 @@ func TestDetectEmbeddedBinaryPathsHandlesDownloadFailure(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
 	}
 
 	mockClient := &MockGitHubClient{
@@ -282,8 +282,8 @@ func TestDetectEmbeddedBinaryPathsVersionTemplating(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"darwin,amd64": "tool-v2.5.0-darwin-amd64.tar.gz",
-		"linux,arm64":  "tool-v2.5.0-linux-arm64.tar.gz",
+		"darwin,amd64": "tool-v{{ .Version }}-darwin-amd64.tar.gz",
+		"linux,arm64":  "tool-v{{ .Version }}-linux-arm64.tar.gz",
 	}
 
 	// Create archives with version in binary path
