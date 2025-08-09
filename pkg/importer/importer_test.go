@@ -178,12 +178,14 @@ func TestDetectEmbeddedBinaryPaths(t *testing.T) {
 		downloadErrors: map[string]error{},
 	}
 
-	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
 	expected := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine",
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu/hyperfine",
 	}
 
 	assert.Equal(t, expected, *result)
@@ -212,12 +214,14 @@ func TestDetectEmbeddedBinaryPathsWithSubdirectory(t *testing.T) {
 		downloadErrors: map[string]error{},
 	}
 
-	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
 	expected := map[string]string{
-		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine",
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu/hyperfine",
 	}
 
 	assert.Equal(t, expected, *result)
@@ -237,7 +241,9 @@ func TestDetectEmbeddedBinaryPathsSkipsNonArchives(t *testing.T) {
 		downloadErrors:    map[string]error{},
 	}
 
-	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
 	require.NoError(t, err)
 
 	// Should return nil since non-archive assets are skipped
@@ -260,10 +266,121 @@ func TestDetectEmbeddedBinaryPathsHandlesDownloadFailure(t *testing.T) {
 		},
 	}
 
-	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
 
 	// Should return error when download fails
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "failed to download asset")
+}
+
+func TestDetectEmbeddedBinaryPathsVersionTemplating(t *testing.T) {
+	release := &github.Release{
+		TagName: "v2.5.0",
+	}
+
+	detectedAssets := map[string]string{
+		"darwin,amd64": "tool-v2.5.0-darwin-amd64.tar.gz",
+		"linux,arm64":  "tool-v2.5.0-linux-arm64.tar.gz",
+	}
+
+	// Create archives with version in binary path
+	darwinTarGz := createTestTarGz(map[string]string{
+		"tool-v2.5.0-darwin-amd64/bin/tool": "darwin binary content",
+		"tool-v2.5.0-darwin-amd64/README":   "readme",
+	})
+
+	linuxTarGz := createTestTarGz(map[string]string{
+		"tool-v2.5.0-linux-arm64/bin/tool": "linux binary content",
+		"tool-v2.5.0-linux-arm64/LICENSE":  "license",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"tool-v2.5.0-darwin-amd64.tar.gz": darwinTarGz,
+			"tool-v2.5.0-linux-arm64.tar.gz":  linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(mockClient, "example", "tool", release, "tool", detectedAssets, "2.5.0")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"darwin,amd64": "tool-v{{ .Version }}-darwin-amd64/bin/tool",
+		"linux,arm64":  "tool-v{{ .Version }}-linux-arm64/bin/tool",
+	}
+
+	assert.Equal(t, expected, *result)
+}
+
+func TestDetectEmbeddedBinaryPathsVersionTemplatingWithoutVersionInPath(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.0.0",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "simple-tool-linux.tar.gz",
+	}
+
+	// Create archive without version in binary path - should not be templated
+	linuxTarGz := createTestTarGz(map[string]string{
+		"bin/simple-tool": "binary content",
+		"docs/README":     "readme",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"simple-tool-linux.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "example", "simple-tool", release, "simple-tool", detectedAssets, "1.0.0",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"linux,amd64": "bin/simple-tool", // No templating since no version in path
+	}
+
+	assert.Equal(t, expected, *result)
+}
+
+func TestDetectEmbeddedBinaryPathsVersionDetectionError(t *testing.T) {
+	release := &github.Release{
+		TagName: "invalid-tag", // This should cause version detection to fail
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "tool-1.0.0-linux.tar.gz",
+	}
+
+	// Create archive with version in binary path
+	linuxTarGz := createTestTarGz(map[string]string{
+		"tool-1.0.0-linux/tool": "binary content",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"tool-1.0.0-linux.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(mockClient, "example", "tool", release, "tool", detectedAssets, "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Should return literal path without templating when version detection fails
+	expected := map[string]string{
+		"linux,amd64": "tool-1.0.0-linux/tool",
+	}
+
+	assert.Equal(t, expected, *result)
 }

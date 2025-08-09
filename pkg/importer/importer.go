@@ -161,7 +161,7 @@ func detectPackage(ghClient github.Client, org, repo string, release *github.Rel
 	}
 
 	// Detect embedded binary paths for archive assets
-	embeddedPaths, err := detectEmbeddedBinaryPaths(ghClient, org, repo, release, packageName, fileNames)
+	embeddedPaths, err := detectEmbeddedBinaryPaths(ghClient, org, repo, release, packageName, fileNames, latestVersion)
 	if err != nil {
 		slog.WarnContext(context.Background(), "Failed to detect embedded binary paths", "error", err)
 		// Continue without embedded paths rather than failing completely
@@ -195,6 +195,7 @@ func detectEmbeddedBinaryPaths(
 	release *github.Release,
 	packageName string,
 	detectedAssets map[string]string,
+	versionLiteral string,
 ) (*map[string]string, error) {
 	ctx := context.Background()
 	slog.InfoContext(ctx, "Detecting embedded binary paths", "package", packageName)
@@ -232,7 +233,9 @@ func detectEmbeddedBinaryPaths(
 			continue
 		}
 
-		embeddedPaths[platformArch] = binaryPath
+		// Template the binary path by replacing version literals
+		templatedPath := UnrenderVersionValue(binaryPath, versionLiteral)
+		embeddedPaths[platformArch] = templatedPath
 		slog.InfoContext(ctx, "Detected embedded binary path", "platformArch", platformArch, "path", binaryPath)
 	}
 
