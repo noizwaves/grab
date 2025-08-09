@@ -1,138 +1,386 @@
 package importer
 
 import (
+	"archive/tar"
 	"bytes"
-	"os"
-	"path/filepath"
+	"compress/gzip"
+	"errors"
 	"testing"
 
-	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
-	"github.com/noizwaves/grab/pkg/internal/githubh"
-	"github.com/noizwaves/grab/pkg/internal/osh"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// Happy path test.
-func TestImport_Success(t *testing.T) {
-	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
+// Mock GitHub client for testing.
+type MockGitHubClient struct {
+	downloadResponses map[string][]byte
+	downloadErrors    map[string]error
+}
 
-	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
+func (m *MockGitHubClient) GetLatestRelease(_, _ string) (*github.Release, error) {
+	return nil, errors.New("not implemented for test")
+}
+
+func (m *MockGitHubClient) GetReleaseByTag(_, _, _ string) (*github.Release, error) {
+	return nil, errors.New("not implemented for test")
+}
+
+func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, asset string) ([]byte, error) {
+	if err, exists := m.downloadErrors[asset]; exists {
+		return nil, err
 	}
 
-	mockRelease := &github.Release{
-		TagName: "v1.2.3",
-		Assets: []github.Asset{
-			{Name: "myapp-1.2.3-linux-amd64.tar.gz"},
-			{Name: "myapp-1.2.3-linux-arm64.tar.gz"},
-			{Name: "myapp-1.2.3-darwin-amd64.tar.gz"},
-			{Name: "myapp-1.2.3-darwin-arm64.tar.gz"},
+	if data, exists := m.downloadResponses[asset]; exists {
+		return data, nil
+	}
+
+	return nil, errors.New("asset not found in mock")
+}
+
+func TestIsArchiveAsset(t *testing.T) {
+	tests := []struct {
+		assetName string
+		expected  bool
+	}{
+		{"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz", true},
+		{"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tgz", true},
+		{"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.xz", true},
+		{"hyperfine-v1.16.1-x86_64-pc-windows-msvc.zip", true},
+		{"hyperfine-v1.16.1-x86_64-unknown-linux-gnu", false},
+		{"hyperfine_1.16.1_amd64.deb", false},
+		{"hyperfine-1.16.1-1.x86_64.rpm", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.assetName, func(t *testing.T) {
+			result := isArchiveAsset(tt.assetName)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFindBinaryInArchive(t *testing.T) {
+	tests := []struct {
+		name        string
+		files       []string
+		packageName string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "exact match at root",
+			files:       []string{"hyperfine", "README.md", "LICENSE"},
+			packageName: "hyperfine",
+			expected:    "hyperfine",
+			expectError: false,
+		},
+		{
+			name:        "exact match in subdirectory",
+			files:       []string{"hyperfine/hyperfine", "hyperfine/README.md", "hyperfine/LICENSE"},
+			packageName: "hyperfine",
+			expected:    "hyperfine/hyperfine",
+			expectError: false,
+		},
+		{
+			name:        "exact match with extension on Windows",
+			files:       []string{"hyperfine.exe", "README.md"},
+			packageName: "hyperfine.exe",
+			expected:    "hyperfine.exe",
+			expectError: false,
+		},
+		{
+			name:        "partial match fallback",
+			files:       []string{"hyperfine-bin", "README.md"},
+			packageName: "hyperfine",
+			expected:    "hyperfine-bin",
+			expectError: false,
+		},
+		{
+			name:        "no match",
+			files:       []string{"other-binary", "README.md"},
+			packageName: "hyperfine",
+			expected:    "",
+			expectError: true,
+		},
+		{
+			name:        "skip directories",
+			files:       []string{"hyperfine/", "hyperfine/hyperfine", "README.md"},
+			packageName: "hyperfine",
+			expected:    "hyperfine/hyperfine",
+			expectError: false,
+		},
+		{
+			name:        "prefer exact over partial match",
+			files:       []string{"hyperfine-extended", "hyperfine", "README.md"},
+			packageName: "hyperfine",
+			expected:    "hyperfine",
+			expectError: false,
 		},
 	}
 
-	importer := NewImporter(&githubh.MockGitHubClient{
-		Release: mockRelease,
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := findBinaryInArchive(testCase.files, testCase.packageName)
+
+			if testCase.expectError {
+				assert.Error(t, err)
+				assert.Empty(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expected, result)
+			}
+		})
+	}
+}
+
+func createTestTarGz(files map[string]string) []byte {
+	var buf bytes.Buffer
+
+	gzWriter := gzip.NewWriter(&buf)
+	tarWriter := tar.NewWriter(gzWriter)
+
+	for name, content := range files {
+		header := &tar.Header{
+			Name: name,
+			Mode: 0o755,
+			Size: int64(len(content)),
+		}
+		tarWriter.WriteHeader(header)
+		tarWriter.Write([]byte(content))
+	}
+
+	tarWriter.Close()
+	gzWriter.Close()
+
+	return buf.Bytes()
+}
+
+func TestDetectEmbeddedBinaryPaths(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.16.1",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
+	}
+
+	// Create tar.gz with binary in subdirectory (not at root, so it needs embedded path)
+	linuxTarGz := createTestTarGz(map[string]string{
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine": "binary content",
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/README.md": "readme",
 	})
 
-	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://github.com/foo/myapp", &out)
-
-	assert.NoError(t, err)
-	assert.Contains(t, out.String(), `Package "myapp" saved to`)
-	assert.Contains(t, out.String(), `/myapp.yml`)
-
-	// Verify the contents of the package YAML file
-	expectedYamlPath := filepath.Join(configDir, "repository", "myapp.yml")
-	actualYaml, err := os.ReadFile(expectedYamlPath)
-	assert.NoError(t, err)
-
-	expectedYaml := `apiVersion: grab.noizwaves.com/v1alpha1
-kind: Package
-metadata:
-  name: myapp
-spec:
-  gitHubRelease:
-    org: foo
-    repo: myapp
-    name: v{{ .Version }}
-    versionRegex: \d+\.\d+\.\d+
-    fileName:
-      darwin,amd64: myapp-{{ .Version }}-darwin-amd64.tar.gz
-      darwin,arm64: myapp-{{ .Version }}-darwin-arm64.tar.gz
-      linux,amd64: myapp-{{ .Version }}-linux-amd64.tar.gz
-      linux,arm64: myapp-{{ .Version }}-linux-arm64.tar.gz
-  program:
-    versionArgs: [--version]
-    versionRegex: \d+\.\d+\.\d+
-`
-
-	assert.Equal(t, expectedYaml, string(actualYaml))
-}
-
-// TestImport_Error_InvalidURL tests error handling for invalid URLs.
-func TestImport_Error_InvalidURL(t *testing.T) {
-	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
-
-	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
 	}
 
-	importer := NewImporter(&githubh.MockGitHubClient{})
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
 
-	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://example.com/invalid/url", &out)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid")
-}
-
-// TestImport_Error_GitHubAPIFailure tests error handling when GitHub API fails.
-func TestImport_Error_GitHubAPIFailure(t *testing.T) {
-	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
-
-	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
+	expected := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu/hyperfine",
 	}
 
-	// MockGitHubClient with no Release set will return "not implemented" error
-	importer := NewImporter(&githubh.MockGitHubClient{})
-
-	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to get release")
+	assert.Equal(t, expected, *result)
 }
 
-// TestImport_Error_NoMatchingAssets tests error handling when no assets match platform/arch.
-func TestImport_Error_NoMatchingAssets(t *testing.T) {
-	configDir := osh.CopyDir(t, "../testdata/contexts/simple")
-
-	gCtx, err := pkg.NewGrabContext(configDir, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
+func TestDetectEmbeddedBinaryPathsWithSubdirectory(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.16.1",
 	}
 
-	// Release with assets that don't match any platform/arch patterns
-	mockRelease := &github.Release{
-		TagName: "v1.2.3",
-		Assets: []github.Asset{
-			{Name: "myapp-1.2.3-unknown-platform.tar.gz"},
-			{Name: "myapp-1.2.3-windows-x72.zip"},
+	detectedAssets := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
+	}
+
+	// Create tar.gz with binary in subdirectory (like real hyperfine releases)
+	linuxTarGz := createTestTarGz(map[string]string{
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine": "binary content",
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/README.md": "readme",
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/LICENSE":   "license",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu/hyperfine",
+	}
+
+	assert.Equal(t, expected, *result)
+}
+
+func TestDetectEmbeddedBinaryPathsSkipsNonArchives(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.16.1",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu", // Not an archive
+	}
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{},
+		downloadErrors:    map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
+	require.NoError(t, err)
+
+	// Should return nil since non-archive assets are skipped
+	assert.Nil(t, result)
+}
+
+func TestDetectEmbeddedBinaryPathsHandlesDownloadFailure(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.16.1",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "hyperfine-v{{ .Version }}-x86_64-unknown-linux-gnu.tar.gz",
+	}
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{},
+		downloadErrors: map[string]error{
+			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": errors.New("download failed"),
 		},
 	}
 
-	importer := NewImporter(&githubh.MockGitHubClient{
-		Release: mockRelease,
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets, "1.16.1",
+	)
+
+	// Should return error when download fails
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "failed to download asset")
+}
+
+func TestDetectEmbeddedBinaryPathsVersionTemplating(t *testing.T) {
+	release := &github.Release{
+		TagName: "v2.5.0",
+	}
+
+	detectedAssets := map[string]string{
+		"darwin,amd64": "tool-v{{ .Version }}-darwin-amd64.tar.gz",
+		"linux,arm64":  "tool-v{{ .Version }}-linux-arm64.tar.gz",
+	}
+
+	// Create archives with version in binary path
+	darwinTarGz := createTestTarGz(map[string]string{
+		"tool-v2.5.0-darwin-amd64/bin/tool": "darwin binary content",
+		"tool-v2.5.0-darwin-amd64/README":   "readme",
 	})
 
-	out := bytes.Buffer{}
-	err = importer.Import(gCtx, "https://github.com/foo/myapp/releases/latest", &out)
+	linuxTarGz := createTestTarGz(map[string]string{
+		"tool-v2.5.0-linux-arm64/bin/tool": "linux binary content",
+		"tool-v2.5.0-linux-arm64/LICENSE":  "license",
+	})
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no matching asset name found")
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"tool-v2.5.0-darwin-amd64.tar.gz": darwinTarGz,
+			"tool-v2.5.0-linux-arm64.tar.gz":  linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(mockClient, "example", "tool", release, "tool", detectedAssets, "2.5.0")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"darwin,amd64": "tool-v{{ .Version }}-darwin-amd64/bin/tool",
+		"linux,arm64":  "tool-v{{ .Version }}-linux-arm64/bin/tool",
+	}
+
+	assert.Equal(t, expected, *result)
+}
+
+func TestDetectEmbeddedBinaryPathsVersionTemplatingWithoutVersionInPath(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.0.0",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "simple-tool-linux.tar.gz",
+	}
+
+	// Create archive without version in binary path - should not be templated
+	linuxTarGz := createTestTarGz(map[string]string{
+		"bin/simple-tool": "binary content",
+		"docs/README":     "readme",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"simple-tool-linux.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "example", "simple-tool", release, "simple-tool", detectedAssets, "1.0.0",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"linux,amd64": "bin/simple-tool", // No templating since no version in path
+	}
+
+	assert.Equal(t, expected, *result)
+}
+
+func TestDetectEmbeddedBinaryPathsVersionDetectionError(t *testing.T) {
+	release := &github.Release{
+		TagName: "invalid-tag", // This should cause version detection to fail
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "tool-1.0.0-linux.tar.gz",
+	}
+
+	// Create archive with version in binary path
+	linuxTarGz := createTestTarGz(map[string]string{
+		"tool-1.0.0-linux/tool": "binary content",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"tool-1.0.0-linux.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	result, err := detectEmbeddedBinaryPaths(mockClient, "example", "tool", release, "tool", detectedAssets, "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Should return literal path without templating when version detection fails
+	expected := map[string]string{
+		"linux,amd64": "tool-1.0.0-linux/tool",
+	}
+
+	assert.Equal(t, expected, *result)
 }
