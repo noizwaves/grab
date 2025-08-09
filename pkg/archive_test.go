@@ -16,6 +16,7 @@ import (
 func TestListTgzContents(t *testing.T) {
 	// Create test tar.gz content
 	var buf bytes.Buffer
+
 	gzWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzWriter)
 
@@ -58,6 +59,7 @@ func TestListTgzContents(t *testing.T) {
 func TestListZipContents(t *testing.T) {
 	// Create test zip content
 	var buf bytes.Buffer
+
 	zipWriter := zip.NewWriter(&buf)
 
 	// Add test files
@@ -92,6 +94,7 @@ func TestListZipContents(t *testing.T) {
 func TestListTarxzContents(t *testing.T) {
 	// Create test tar content first
 	var tarBuf bytes.Buffer
+
 	tarWriter := tar.NewWriter(&tarBuf)
 
 	// Add test files
@@ -121,6 +124,7 @@ func TestListTarxzContents(t *testing.T) {
 
 	// Compress with xz
 	var xzBuf bytes.Buffer
+
 	xzWriter, err := xz.NewWriter(&xzBuf)
 	require.NoError(t, err)
 
@@ -161,6 +165,7 @@ func TestListArchiveContents(t *testing.T) {
 				tarWriter.Write([]byte(strings.Repeat("x", 100)))
 				tarWriter.Close()
 				gzWriter.Close()
+
 				return &buf
 			},
 			expected: []string{"hyperfine"},
@@ -174,6 +179,7 @@ func TestListArchiveContents(t *testing.T) {
 				writer, _ := zipWriter.Create("hyperfine.exe")
 				writer.Write([]byte("binary"))
 				zipWriter.Close()
+
 				return &buf
 			},
 			expected: []string{"hyperfine.exe"},
@@ -188,17 +194,17 @@ func TestListArchiveContents(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := tt.setupFunc()
-			result, err := ListArchiveContents(tt.assetName, buf)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			buf := testCase.setupFunc()
+			result, err := ListArchiveContents(testCase.assetName, buf)
 
-			if tt.expected == nil {
+			if testCase.expected == nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "unsupported archive format")
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				assert.Equal(t, testCase.expected, result)
 			}
 		})
 	}

@@ -2,16 +2,14 @@ package importer
 
 import (
 	"archive/tar"
-	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"errors"
 	"testing"
 
+	"github.com/noizwaves/grab/pkg/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/noizwaves/grab/pkg/github"
 )
 
 // Mock GitHub client for testing.
@@ -20,21 +18,23 @@ type MockGitHubClient struct {
 	downloadErrors    map[string]error
 }
 
-func (m *MockGitHubClient) GetLatestRelease(org, repo string) (*github.Release, error) {
+func (m *MockGitHubClient) GetLatestRelease(_, _ string) (*github.Release, error) {
 	return nil, errors.New("not implemented for test")
 }
 
-func (m *MockGitHubClient) GetReleaseByTag(org, repo, tag string) (*github.Release, error) {
+func (m *MockGitHubClient) GetReleaseByTag(_, _, _ string) (*github.Release, error) {
 	return nil, errors.New("not implemented for test")
 }
 
-func (m *MockGitHubClient) DownloadReleaseAsset(org, repo, release, asset string) ([]byte, error) {
+func (m *MockGitHubClient) DownloadReleaseAsset(_, _, _, asset string) ([]byte, error) {
 	if err, exists := m.downloadErrors[asset]; exists {
 		return nil, err
 	}
+
 	if data, exists := m.downloadResponses[asset]; exists {
 		return data, nil
 	}
+
 	return nil, errors.New("asset not found in mock")
 }
 
@@ -66,61 +66,77 @@ func TestFindBinaryInArchive(t *testing.T) {
 		files       []string
 		packageName string
 		expected    string
+		expectError bool
 	}{
 		{
 			name:        "exact match at root",
 			files:       []string{"hyperfine", "README.md", "LICENSE"},
 			packageName: "hyperfine",
 			expected:    "hyperfine",
+			expectError: false,
 		},
 		{
 			name:        "exact match in subdirectory",
 			files:       []string{"hyperfine/hyperfine", "hyperfine/README.md", "hyperfine/LICENSE"},
 			packageName: "hyperfine",
 			expected:    "hyperfine/hyperfine",
+			expectError: false,
 		},
 		{
 			name:        "exact match with extension on Windows",
 			files:       []string{"hyperfine.exe", "README.md"},
 			packageName: "hyperfine.exe",
 			expected:    "hyperfine.exe",
+			expectError: false,
 		},
 		{
 			name:        "partial match fallback",
 			files:       []string{"hyperfine-bin", "README.md"},
 			packageName: "hyperfine",
 			expected:    "hyperfine-bin",
+			expectError: false,
 		},
 		{
 			name:        "no match",
 			files:       []string{"other-binary", "README.md"},
 			packageName: "hyperfine",
 			expected:    "",
+			expectError: true,
 		},
 		{
 			name:        "skip directories",
 			files:       []string{"hyperfine/", "hyperfine/hyperfine", "README.md"},
 			packageName: "hyperfine",
 			expected:    "hyperfine/hyperfine",
+			expectError: false,
 		},
 		{
 			name:        "prefer exact over partial match",
 			files:       []string{"hyperfine-extended", "hyperfine", "README.md"},
 			packageName: "hyperfine",
 			expected:    "hyperfine",
+			expectError: false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := findBinaryInArchive(tt.files, tt.packageName)
-			assert.Equal(t, tt.expected, result)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := findBinaryInArchive(testCase.files, testCase.packageName)
+
+			if testCase.expectError {
+				assert.Error(t, err)
+				assert.Empty(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.expected, result)
+			}
 		})
 	}
 }
 
 func createTestTarGz(files map[string]string) []byte {
 	var buf bytes.Buffer
+
 	gzWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzWriter)
 
@@ -136,19 +152,7 @@ func createTestTarGz(files map[string]string) []byte {
 
 	tarWriter.Close()
 	gzWriter.Close()
-	return buf.Bytes()
-}
 
-func createTestZip(files map[string]string) []byte {
-	var buf bytes.Buffer
-	zipWriter := zip.NewWriter(&buf)
-
-	for name, content := range files {
-		writer, _ := zipWriter.Create(name)
-		writer.Write([]byte(content))
-	}
-
-	zipWriter.Close()
 	return buf.Bytes()
 }
 
@@ -158,41 +162,31 @@ func TestDetectEmbeddedBinaryPaths(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64":  "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
-		"darwin,amd64": "hyperfine-v1.16.1-x86_64-apple-darwin.tar.gz",
-		"linux,arm64":  "hyperfine-v1.16.1-aarch64-unknown-linux-gnu.tar.gz",
+		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
 	}
 
-	// Setup mock responses
+	// Create tar.gz with binary in subdirectory (not at root, so it needs embedded path)
 	linuxTarGz := createTestTarGz(map[string]string{
-		"hyperfine": "linux binary content",
-	})
-	darwinTarGz := createTestTarGz(map[string]string{
-		"hyperfine": "darwin binary content",
-	})
-	arm64TarGz := createTestTarGz(map[string]string{
-		"hyperfine": "arm64 binary content",
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine": "binary content",
+		"hyperfine-v1.16.1-x86_64-unknown-linux-gnu/README.md": "readme",
 	})
 
 	mockClient := &MockGitHubClient{
 		downloadResponses: map[string][]byte{
-			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz":  linuxTarGz,
-			"hyperfine-v1.16.1-x86_64-apple-darwin.tar.gz":       darwinTarGz,
-			"hyperfine-v1.16.1-aarch64-unknown-linux-gnu.tar.gz": arm64TarGz,
+			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": linuxTarGz,
 		},
 		downloadErrors: map[string]error{},
 	}
 
 	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
 	require.NoError(t, err)
+	require.NotNil(t, result)
 
 	expected := map[string]string{
-		"linux,amd64":  "hyperfine",
-		"darwin,amd64": "hyperfine",
-		"linux,arm64":  "hyperfine",
+		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine",
 	}
 
-	assert.Equal(t, expected, result)
+	assert.Equal(t, expected, *result)
 }
 
 func TestDetectEmbeddedBinaryPathsWithSubdirectory(t *testing.T) {
@@ -220,12 +214,13 @@ func TestDetectEmbeddedBinaryPathsWithSubdirectory(t *testing.T) {
 
 	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
 	require.NoError(t, err)
+	require.NotNil(t, result)
 
 	expected := map[string]string{
 		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu/hyperfine",
 	}
 
-	assert.Equal(t, expected, result)
+	assert.Equal(t, expected, *result)
 }
 
 func TestDetectEmbeddedBinaryPathsSkipsNonArchives(t *testing.T) {
@@ -245,9 +240,8 @@ func TestDetectEmbeddedBinaryPathsSkipsNonArchives(t *testing.T) {
 	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
 	require.NoError(t, err)
 
-	// Should return empty map since non-archive assets are skipped
-	expected := map[string]string{}
-	assert.Equal(t, expected, result)
+	// Should return nil since non-archive assets are skipped
+	assert.Nil(t, result)
 }
 
 func TestDetectEmbeddedBinaryPathsHandlesDownloadFailure(t *testing.T) {
@@ -256,31 +250,20 @@ func TestDetectEmbeddedBinaryPathsHandlesDownloadFailure(t *testing.T) {
 	}
 
 	detectedAssets := map[string]string{
-		"linux,amd64":  "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
-		"darwin,amd64": "hyperfine-v1.16.1-x86_64-apple-darwin.tar.gz",
+		"linux,amd64": "hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz",
 	}
 
-	// Setup mock responses - one succeeds, one fails
-	linuxTarGz := createTestTarGz(map[string]string{
-		"hyperfine": "binary content",
-	})
-
 	mockClient := &MockGitHubClient{
-		downloadResponses: map[string][]byte{
-			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": linuxTarGz,
-		},
+		downloadResponses: map[string][]byte{},
 		downloadErrors: map[string]error{
-			"hyperfine-v1.16.1-x86_64-apple-darwin.tar.gz": errors.New("download failed"),
+			"hyperfine-v1.16.1-x86_64-unknown-linux-gnu.tar.gz": errors.New("download failed"),
 		},
 	}
 
 	result, err := detectEmbeddedBinaryPaths(mockClient, "sharkdp", "hyperfine", release, "hyperfine", detectedAssets)
-	require.NoError(t, err)
 
-	// Should only include the successful one
-	expected := map[string]string{
-		"linux,amd64": "hyperfine",
-	}
-
-	assert.Equal(t, expected, result)
+	// Should return error when download fails
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "failed to download asset")
 }

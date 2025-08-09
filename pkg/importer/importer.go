@@ -3,6 +3,7 @@ package importer
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -39,6 +40,7 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 
 	// Detect the patterns from the Release
 	packageName := releaseURL.Repository
+
 	detectedPackage, err := detectPackage(
 		i.githubClient,
 		releaseURL.Organization,
@@ -96,6 +98,7 @@ type detectedPackage struct {
 	embeddedBinaryPaths map[string]string
 }
 
+//nolint:funlen,lll
 func detectPackage(ghClient github.Client, org, repo string, release *github.Release, packageName string) (*detectedPackage, error) {
 	// Release name pattern
 	releaseDetector := NewReleaseNamePatternDetector()
@@ -164,11 +167,16 @@ func detectPackage(ghClient github.Client, org, repo string, release *github.Rel
 		// Continue without embedded paths rather than failing completely
 	}
 
+	var embeddedBinaryPathsMap map[string]string
+	if embeddedPaths != nil {
+		embeddedBinaryPathsMap = *embeddedPaths
+	}
+
 	return &detectedPackage{
 		releaseName:         releaseName,
 		assets:              fileNames,
 		versionRegex:        versionRegex,
-		embeddedBinaryPaths: embeddedPaths,
+		embeddedBinaryPaths: embeddedBinaryPathsMap,
 	}, nil
 }
 
@@ -187,7 +195,7 @@ func detectEmbeddedBinaryPaths(
 	release *github.Release,
 	packageName string,
 	detectedAssets map[string]string,
-) (map[string]string, error) {
+) (*map[string]string, error) {
 	ctx := context.Background()
 	slog.InfoContext(ctx, "Detecting embedded binary paths", "package", packageName)
 
@@ -204,24 +212,23 @@ func detectEmbeddedBinaryPaths(
 		// Download the asset
 		data, err := ghClient.DownloadReleaseAsset(org, repo, release.TagName, assetName)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to download asset for binary detection", "asset", assetName, "error", err)
-
-			continue
+			return nil, fmt.Errorf("failed to download asset %s for binary detection: %w", assetName, err)
 		}
 
 		// List archive contents
 		files, err := listArchiveContents(assetName, bytes.NewBuffer(data))
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to list archive contents", "asset", assetName, "error", err)
-
-			continue
+			return nil, fmt.Errorf("failed to list archive contents for %s: %w", assetName, err)
 		}
 
 		// Find binary matching package name
-		binaryPath := findBinaryInArchive(files, packageName)
-		if binaryPath == "" {
-			slog.WarnContext(ctx, "No binary found matching package name", "package", packageName, "asset", assetName)
+		binaryPath, err := findBinaryInArchive(files, packageName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find binary in asset %s: %w", assetName, err)
+		}
 
+		// Skip if binary path is just the package name (default path)
+		if binaryPath == packageName {
 			continue
 		}
 
@@ -229,7 +236,13 @@ func detectEmbeddedBinaryPaths(
 		slog.InfoContext(ctx, "Detected embedded binary path", "platformArch", platformArch, "path", binaryPath)
 	}
 
-	return embeddedPaths, nil
+	// Return nil if no embedded paths were detected
+	if len(embeddedPaths) == 0 {
+		//nolint:nilnil
+		return nil, nil
+	}
+
+	return &embeddedPaths, nil
 }
 
 func isArchiveAsset(assetName string) bool {
@@ -239,7 +252,7 @@ func isArchiveAsset(assetName string) bool {
 		strings.HasSuffix(assetName, ".zip")
 }
 
-func findBinaryInArchive(files []string, packageName string) string {
+func findBinaryInArchive(files []string, packageName string) (string, error) {
 	var candidates []string
 
 	for _, path := range files {
@@ -253,7 +266,7 @@ func findBinaryInArchive(files []string, packageName string) string {
 
 		// Exact match takes priority
 		if fileName == packageName {
-			return path
+			return path, nil
 		}
 
 		// Collect potential matches for fallback
@@ -264,12 +277,13 @@ func findBinaryInArchive(files []string, packageName string) string {
 
 	// If no exact match, return first candidate
 	if len(candidates) > 0 {
-		return candidates[0]
+		return candidates[0], nil
 	}
 
-	return ""
+	return "", errors.New("no binary found matching package name \"" + packageName + "\"")
 }
 
+//nolint:wrapcheck
 func listArchiveContents(assetName string, data *bytes.Buffer) ([]string, error) {
 	switch {
 	case strings.HasSuffix(assetName, ".tar.gz") || strings.HasSuffix(assetName, ".tgz"):
@@ -279,6 +293,6 @@ func listArchiveContents(assetName string, data *bytes.Buffer) ([]string, error)
 	case strings.HasSuffix(assetName, ".zip"):
 		return pkg.ListZipContents(data)
 	default:
-		return nil, fmt.Errorf("unsupported archive format: %s", assetName)
+		return nil, errors.New("unsupported archive format: " + assetName)
 	}
 }

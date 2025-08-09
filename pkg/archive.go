@@ -154,7 +154,7 @@ func ListZipContents(data io.Reader) ([]string, error) {
 		return nil, fmt.Errorf("error decompressing Zipped data: %w", err)
 	}
 
-	var files []string
+	files := make([]string, 0, len(decompressed.File))
 	for _, entry := range decompressed.File {
 		files = append(files, entry.Name)
 	}
@@ -175,6 +175,7 @@ func ListTarContents(data io.Reader) ([]string, error) {
 	tarReader := tar.NewReader(data)
 
 	var files []string
+
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
