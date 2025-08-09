@@ -1,10 +1,13 @@
 package importer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
+	"path/filepath"
+	"strings"
 
 	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
@@ -35,13 +38,19 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 	}
 
 	// Detect the patterns from the Release
-	detectedPackage, err := detectPackage(release)
+	packageName := releaseURL.Repository
+	detectedPackage, err := detectPackage(
+		i.githubClient,
+		releaseURL.Organization,
+		releaseURL.Repository,
+		release,
+		packageName,
+	)
 	if err != nil {
 		return err
 	}
 
-	// Assume binary name matches repository name verbatim
-	packageName := releaseURL.Repository
+	// Package name already set above
 
 	// Construct the new binary
 	packageConfig := pkg.ConfigPackage{
@@ -58,8 +67,8 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 				VersionRegex: detectedPackage.versionRegex,
 				FileName:     detectedPackage.assets,
 
-				// Assume binary is at the root of any archive file
-				EmbeddedBinaryPath: nil,
+				// Use detected embedded binary paths
+				EmbeddedBinaryPath: detectedPackage.embeddedBinaryPaths,
 			},
 			Program: pkg.ConfigProgram{
 				// Assume binary uses a --version flag and not a subcommand
@@ -81,12 +90,13 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 }
 
 type detectedPackage struct {
-	releaseName  string
-	versionRegex string
-	assets       map[string]string
+	releaseName         string
+	versionRegex        string
+	assets              map[string]string
+	embeddedBinaryPaths map[string]string
 }
 
-func detectPackage(release *github.Release) (*detectedPackage, error) {
+func detectPackage(ghClient github.Client, org, repo string, release *github.Release, packageName string) (*detectedPackage, error) {
 	// Release name pattern
 	releaseDetector := NewReleaseNamePatternDetector()
 
@@ -147,10 +157,18 @@ func detectPackage(release *github.Release) (*detectedPackage, error) {
 		fileNames[key] = result
 	}
 
+	// Detect embedded binary paths for archive assets
+	embeddedPaths, err := detectEmbeddedBinaryPaths(ghClient, org, repo, release, packageName, fileNames)
+	if err != nil {
+		slog.WarnContext(context.Background(), "Failed to detect embedded binary paths", "error", err)
+		// Continue without embedded paths rather than failing completely
+	}
+
 	return &detectedPackage{
-		releaseName:  releaseName,
-		assets:       fileNames,
-		versionRegex: versionRegex,
+		releaseName:         releaseName,
+		assets:              fileNames,
+		versionRegex:        versionRegex,
+		embeddedBinaryPaths: embeddedPaths,
 	}, nil
 }
 
@@ -160,5 +178,107 @@ func getDetectablePairs() [][]string {
 		{"linux", "arm64"},
 		{"darwin", "amd64"},
 		{"darwin", "arm64"},
+	}
+}
+
+func detectEmbeddedBinaryPaths(
+	ghClient github.Client,
+	org, repo string,
+	release *github.Release,
+	packageName string,
+	detectedAssets map[string]string,
+) (map[string]string, error) {
+	ctx := context.Background()
+	slog.InfoContext(ctx, "Detecting embedded binary paths", "package", packageName)
+
+	embeddedPaths := make(map[string]string)
+
+	for platformArch, assetName := range detectedAssets {
+		// Skip non-archive assets - they don't need embedded paths
+		if !isArchiveAsset(assetName) {
+			continue
+		}
+
+		slog.DebugContext(ctx, "Analyzing archive asset", "platformArch", platformArch, "asset", assetName)
+
+		// Download the asset
+		data, err := ghClient.DownloadReleaseAsset(org, repo, release.TagName, assetName)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to download asset for binary detection", "asset", assetName, "error", err)
+
+			continue
+		}
+
+		// List archive contents
+		files, err := listArchiveContents(assetName, bytes.NewBuffer(data))
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to list archive contents", "asset", assetName, "error", err)
+
+			continue
+		}
+
+		// Find binary matching package name
+		binaryPath := findBinaryInArchive(files, packageName)
+		if binaryPath == "" {
+			slog.WarnContext(ctx, "No binary found matching package name", "package", packageName, "asset", assetName)
+
+			continue
+		}
+
+		embeddedPaths[platformArch] = binaryPath
+		slog.InfoContext(ctx, "Detected embedded binary path", "platformArch", platformArch, "path", binaryPath)
+	}
+
+	return embeddedPaths, nil
+}
+
+func isArchiveAsset(assetName string) bool {
+	return strings.HasSuffix(assetName, ".tar.gz") ||
+		strings.HasSuffix(assetName, ".tgz") ||
+		strings.HasSuffix(assetName, ".tar.xz") ||
+		strings.HasSuffix(assetName, ".zip")
+}
+
+func findBinaryInArchive(files []string, packageName string) string {
+	var candidates []string
+
+	for _, path := range files {
+		// Skip directories
+		if strings.HasSuffix(path, "/") {
+			continue
+		}
+
+		// Get fileName without directory path
+		fileName := filepath.Base(path)
+
+		// Exact match takes priority
+		if fileName == packageName {
+			return path
+		}
+
+		// Collect potential matches for fallback
+		if strings.Contains(fileName, packageName) {
+			candidates = append(candidates, path)
+		}
+	}
+
+	// If no exact match, return first candidate
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+
+	return ""
+}
+
+func listArchiveContents(assetName string, data *bytes.Buffer) ([]string, error) {
+	switch {
+	case strings.HasSuffix(assetName, ".tar.gz") || strings.HasSuffix(assetName, ".tgz"):
+		return pkg.ListTgzContents(data)
+	case strings.HasSuffix(assetName, ".tar.xz"):
+		return pkg.ListTarxzContents(data)
+	case strings.HasSuffix(assetName, ".zip"):
+		return pkg.ListZipContents(data)
+	default:
+		return nil, fmt.Errorf("unsupported archive format: %s", assetName)
 	}
 }

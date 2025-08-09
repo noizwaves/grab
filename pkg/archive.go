@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 
 	"github.com/ulikunitz/xz"
 )
@@ -129,4 +130,78 @@ func unTar(binaryPath string, data io.Reader) ([]byte, error) {
 	}
 
 	return nil, fmt.Errorf("no file named %q found in archive", binaryPath)
+}
+
+func ListTgzContents(data io.Reader) ([]string, error) {
+	decompressed, err := gzip.NewReader(data)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing Gzipped data: %w", err)
+	}
+
+	return ListTarContents(decompressed)
+}
+
+func ListZipContents(data io.Reader) ([]string, error) {
+	raw, err := io.ReadAll(data)
+	if err != nil {
+		return nil, fmt.Errorf("error reading raw Zip file: %w", err)
+	}
+
+	reader := bytes.NewReader(raw)
+
+	decompressed, err := zip.NewReader(reader, int64(len(raw)))
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing Zipped data: %w", err)
+	}
+
+	var files []string
+	for _, entry := range decompressed.File {
+		files = append(files, entry.Name)
+	}
+
+	return files, nil
+}
+
+func ListTarxzContents(data io.Reader) ([]string, error) {
+	decompressed, err := xz.NewReader(data)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing xz data: %w", err)
+	}
+
+	return ListTarContents(decompressed)
+}
+
+func ListTarContents(data io.Reader) ([]string, error) {
+	tarReader := tar.NewReader(data)
+
+	var files []string
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("error reading from tar: %w", err)
+		}
+
+		if header.Typeflag == tar.TypeReg {
+			files = append(files, header.Name)
+		}
+	}
+
+	return files, nil
+}
+
+func ListArchiveContents(assetName string, data io.Reader) ([]string, error) {
+	switch {
+	case strings.HasSuffix(assetName, ".tar.gz") || strings.HasSuffix(assetName, ".tgz"):
+		return ListTgzContents(data)
+	case strings.HasSuffix(assetName, ".tar.xz"):
+		return ListTarxzContents(data)
+	case strings.HasSuffix(assetName, ".zip"):
+		return ListZipContents(data)
+	default:
+		return nil, fmt.Errorf("unsupported archive format: %s", assetName)
+	}
 }
