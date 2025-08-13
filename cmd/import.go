@@ -12,7 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//nolint:lll
 func makeImportCommand() *cobra.Command {
+	var packageName string
+
 	importCmd := &cobra.Command{
 		Use:   "import [GITHUB_REPO_URL]",
 		Short: "Generate package spec from GitHub repo",
@@ -21,6 +24,9 @@ Automatically generate a package specification YAML file by analyzing a GitHub r
 
 Arguments:
   GITHUB_REPO_URL: GitHub repository URL to analyze (e.g., https://github.com/junegunn/fzf)
+
+Flags:
+  -n, --name string: Override package name (default: repository name, must be lowercase with no whitespace)
 `,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
@@ -29,6 +35,14 @@ Arguments:
 			cobra.CheckErr(err)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
+			// Validate package name if provided
+			if packageName != "" {
+				err := validatePackageName(packageName)
+				if err != nil {
+					return fmt.Errorf("invalid package name: %w", err)
+				}
+			}
+
 			gCtx, err := newGrabContext()
 			if err != nil {
 				return fmt.Errorf("error loading context: %w", err)
@@ -44,7 +58,7 @@ Arguments:
 
 			importer := importer.NewImporter(github.NewClient())
 
-			err = importer.Import(gCtx, inputURL, os.Stdout)
+			err = importer.Import(gCtx, inputURL, packageName, os.Stdout)
 			if err != nil {
 				return fmt.Errorf("error installing: %w", err)
 			}
@@ -52,6 +66,8 @@ Arguments:
 			return nil
 		},
 	}
+
+	importCmd.Flags().StringVarP(&packageName, "name", "n", "", "Override package name (must be lowercase with no whitespace)")
 
 	return importCmd
 }
@@ -93,4 +109,25 @@ func validateGitHubURL(inputURL string) (*url.URL, error) {
 	}
 
 	return parsedURL, nil
+}
+
+// validatePackageName validates that the package name is lowercase and contains no whitespace.
+func validatePackageName(name string) error {
+	if strings.TrimSpace(name) != name {
+		return errors.New("package name cannot contain leading or trailing whitespace")
+	}
+
+	if strings.ContainsAny(name, " \t\n\r") {
+		return errors.New("package name cannot contain whitespace characters")
+	}
+
+	if name != strings.ToLower(name) {
+		return errors.New("package name must be lowercase")
+	}
+
+	if name == "" {
+		return errors.New("package name cannot be empty")
+	}
+
+	return nil
 }

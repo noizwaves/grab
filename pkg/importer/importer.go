@@ -25,7 +25,7 @@ func NewImporter(githubClient github.Client) *Importer {
 	}
 }
 
-func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) error {
+func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer) error {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
 		return err
@@ -41,6 +41,9 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 
 	// Detect the patterns from the Release
 	packageName := releaseURL.Repository
+	if customPackageName != "" {
+		packageName = customPackageName
+	}
 
 	detectedPackage, err := detectPackage(
 		i.githubClient,
@@ -52,8 +55,6 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, out io.Writer) erro
 	if err != nil {
 		return err
 	}
-
-	// Package name already set above
 
 	// Construct the new binary
 	packageConfig := pkg.ConfigPackage{
