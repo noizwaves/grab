@@ -384,3 +384,40 @@ func TestDetectEmbeddedBinaryPathsVersionDetectionError(t *testing.T) {
 
 	assert.Equal(t, expected, *result)
 }
+
+func TestDetectEmbeddedBinaryPathsWithCustomPackageName(t *testing.T) {
+	release := &github.Release{
+		TagName: "v1.0.0",
+	}
+
+	detectedAssets := map[string]string{
+		"linux,amd64": "custom-tool-v{{ .Version }}-linux.tar.gz",
+	}
+
+	// Create archive with binary matching custom package name, not repo name
+	linuxTarGz := createTestTarGz(map[string]string{
+		"custom-tool-v1.0.0-linux/my-custom-name": "binary content",
+		"custom-tool-v1.0.0-linux/README.md":      "readme",
+	})
+
+	mockClient := &MockGitHubClient{
+		downloadResponses: map[string][]byte{
+			"custom-tool-v1.0.0-linux.tar.gz": linuxTarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	// Use custom package name instead of default repo name
+	customPackageName := "my-custom-name"
+	result, err := detectEmbeddedBinaryPaths(
+		mockClient, "example", "repo-name", release, customPackageName, detectedAssets, "1.0.0",
+	)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	expected := map[string]string{
+		"linux,amd64": "custom-tool-v{{ .Version }}-linux/my-custom-name",
+	}
+
+	assert.Equal(t, expected, *result)
+}
