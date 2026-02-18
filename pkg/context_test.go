@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/noizwaves/grab/pkg/internal/asserth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -90,4 +91,49 @@ func TestNewGrabContext(t *testing.T) {
 
 		assert.Len(t, result.Binaries, 1)
 	})
+}
+
+func TestAddPackageToConfig(t *testing.T) {
+	dir := makeEmptyConfig(t)
+	configDirPath := path.Join(dir, ".grab")
+
+	gCtx, err := NewGrabContext(configDirPath, t.TempDir())
+	assert.NoError(t, err)
+
+	err = gCtx.AddPackageToConfig("fzf", "0.45.0")
+	assert.NoError(t, err)
+
+	// Verify in-memory state
+	assert.Equal(t, "0.45.0", gCtx.Config.Packages["fzf"])
+
+	// Verify persisted to disk
+	expectedContent := "packages:\n" +
+		"  fzf: 0.45.0\n"
+	asserth.FileContents(t, path.Join(configDirPath, "config.yml"), expectedContent)
+}
+
+func TestAddPackageToConfigAddsToExisting(t *testing.T) {
+	dir := makeEmptyConfig(t)
+	configDirPath := path.Join(dir, ".grab")
+
+	gCtx, err := NewGrabContext(configDirPath, t.TempDir())
+	assert.NoError(t, err)
+
+	// Add first package
+	err = gCtx.AddPackageToConfig("bar", "1.0.0")
+	assert.NoError(t, err)
+
+	// Add second package
+	err = gCtx.AddPackageToConfig("fzf", "0.45.0")
+	assert.NoError(t, err)
+
+	// Verify both packages are in memory
+	assert.Equal(t, "1.0.0", gCtx.Config.Packages["bar"])
+	assert.Equal(t, "0.45.0", gCtx.Config.Packages["fzf"])
+
+	// Verify persisted to disk
+	expectedContent := "packages:\n" +
+		"  bar: 1.0.0\n" +
+		"  fzf: 0.45.0\n"
+	asserth.FileContents(t, path.Join(configDirPath, "config.yml"), expectedContent)
 }
