@@ -26,9 +26,15 @@ func NewImporter(githubClient github.Client) *Importer {
 }
 
 func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer) error {
+	_, err := i.ImportPackage(gCtx, url, customPackageName, out)
+
+	return err
+}
+
+func (i *Importer) ImportPackage(gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer) (*ImportResult, error) {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx := context.Background()
@@ -36,7 +42,7 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 
 	release, err := i.githubClient.GetLatestRelease(releaseURL.Organization, releaseURL.Repository)
 	if err != nil {
-		return fmt.Errorf("failed to get release: %w", err)
+		return nil, fmt.Errorf("failed to get release: %w", err)
 	}
 
 	// Detect the patterns from the Release
@@ -53,7 +59,7 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 		packageName,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Construct the new binary
@@ -85,19 +91,29 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 
 	packagePath, err := gCtx.SavePackage(&packageConfig)
 	if err != nil {
-		return fmt.Errorf("failed to save package: %w", err)
+		return nil, fmt.Errorf("failed to save package: %w", err)
 	}
 
 	fmt.Fprintf(out, "Package %q saved to %s\n", packageName, packagePath)
 
-	return nil
+	return &ImportResult{
+		PackageName: packageName,
+		Version:     detectedPackage.version,
+	}, nil
 }
 
 type detectedPackage struct {
 	releaseName         string
 	versionRegex        string
+	version             string
 	assets              map[string]string
 	embeddedBinaryPaths map[string]string
+}
+
+// ImportResult contains the result of a successful import operation.
+type ImportResult struct {
+	PackageName string
+	Version     string
 }
 
 //nolint:funlen,lll
@@ -176,6 +192,7 @@ func detectPackage(ghClient github.Client, org, repo string, release *github.Rel
 
 	return &detectedPackage{
 		releaseName:         releaseName,
+		version:             latestVersion,
 		assets:              fileNames,
 		versionRegex:        versionRegex,
 		embeddedBinaryPaths: embeddedBinaryPathsMap,
