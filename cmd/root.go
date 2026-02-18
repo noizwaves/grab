@@ -65,6 +65,7 @@ Supports macOS, Linux, and containers.
 	rootCmd.AddCommand(makeInstallCommand())
 	rootCmd.AddCommand(makeUpdateCommand())
 	rootCmd.AddCommand(makeImportCommand())
+	rootCmd.AddCommand(makeGetCommand())
 	rootCmd.AddCommand(makeVersionCommand())
 
 	return rootCmd
