@@ -85,6 +85,17 @@ func NewGrabContext(configPathOverride, binPathOverride string) (*GrabContext, e
 	}, err
 }
 
+func (gc *GrabContext) AddPackageToConfig(packageName, version string) error {
+	gc.Config.Packages[packageName] = version
+
+	err := saveConfig(gc.Config, gc.ConfigPath)
+	if err != nil {
+		return fmt.Errorf("error saving config: %w", err)
+	}
+
+	return nil
+}
+
 func (gc *GrabContext) EnsureBinPathExists() error {
 	err := os.MkdirAll(gc.BinPath, 0o755) //nolint:mnd
 	if err != nil {

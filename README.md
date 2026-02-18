@@ -52,7 +52,21 @@ go build -o ~/.local/bin/grab main.go
 
 ### Adding new packages
 
-The `grab import <url> [options]` command can be used to automatically import GitHub releases into the local repository. Simply provide any GitHub repository URL:
+The quickest way to add a new package is with `grab get`:
+
+```sh
+grab get https://github.com/junegunn/fzf
+```
+
+This will automatically import the package spec, add the latest version to the config, and install the binary.
+
+A custom package name can be specified using the `--name`/`-n` option:
+
+```sh
+grab get --name my-tool https://github.com/org/repo
+```
+
+For more control, packages can be added step-by-step using `grab import` to import GitHub releases into the local repository:
 
 ```sh
 # Any of these formats work:
@@ -63,6 +77,7 @@ grab import https://github.com/junegunn/fzf/issues
 
 The import command will automatically fetch the latest release from the repository and generate the appropriate package configuration.
 Packages will be named after the repository slug by default, and can be overridden using the `--name`/`-n` option.
+After importing, add the desired version to `~/.grab/config.yml` and run `grab install`.
 
 Packages can also be defined manually by editing package YML files at `~/.grab/repository/*.yml`.
 

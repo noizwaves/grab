@@ -5,8 +5,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"os"
+	"path"
 	"testing"
 
+	"github.com/noizwaves/grab/pkg"
 	"github.com/noizwaves/grab/pkg/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,11 +17,21 @@ import (
 
 // Mock GitHub client for testing.
 type MockGitHubClient struct {
+	latestRelease     *github.Release
+	latestReleaseErr  error
 	downloadResponses map[string][]byte
 	downloadErrors    map[string]error
 }
 
 func (m *MockGitHubClient) GetLatestRelease(_, _ string) (*github.Release, error) {
+	if m.latestRelease != nil {
+		return m.latestRelease, nil
+	}
+
+	if m.latestReleaseErr != nil {
+		return nil, m.latestReleaseErr
+	}
+
 	return nil, errors.New("not implemented for test")
 }
 
@@ -420,4 +433,124 @@ func TestDetectEmbeddedBinaryPathsWithCustomPackageName(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, *result)
+}
+
+func makeEmptyGrabContext(t *testing.T) *pkg.GrabContext {
+	t.Helper()
+
+	dir := t.TempDir()
+
+	err := os.MkdirAll(path.Join(dir, ".grab", "repository"), 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emptyConfig := []byte(`packages: {}`)
+
+	err = os.WriteFile(path.Join(dir, ".grab", "config.yml"), emptyConfig, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gCtx, err := pkg.NewGrabContext(path.Join(dir, ".grab"), path.Join(dir, "bin"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return gCtx
+}
+
+func TestImportPackageReturnsResult(t *testing.T) {
+	gCtx := makeEmptyGrabContext(t)
+
+	// Create tar.gz archives for each platform
+	linuxAmd64TarGz := createTestTarGz(map[string]string{
+		"mytool": "binary content",
+	})
+	linuxArm64TarGz := createTestTarGz(map[string]string{
+		"mytool": "binary content",
+	})
+	darwinAmd64TarGz := createTestTarGz(map[string]string{
+		"mytool": "binary content",
+	})
+	darwinArm64TarGz := createTestTarGz(map[string]string{
+		"mytool": "binary content",
+	})
+
+	release := &github.Release{
+		TagName: "v1.2.3",
+		Assets: []github.Asset{
+			{Name: "mytool-1.2.3-linux-amd64.tar.gz"},
+			{Name: "mytool-1.2.3-linux-arm64.tar.gz"},
+			{Name: "mytool-1.2.3-darwin-amd64.tar.gz"},
+			{Name: "mytool-1.2.3-darwin-arm64.tar.gz"},
+		},
+	}
+
+	mockClient := &MockGitHubClient{
+		latestRelease: release,
+		downloadResponses: map[string][]byte{
+			"mytool-1.2.3-linux-amd64.tar.gz":  linuxAmd64TarGz,
+			"mytool-1.2.3-linux-arm64.tar.gz":  linuxArm64TarGz,
+			"mytool-1.2.3-darwin-amd64.tar.gz": darwinAmd64TarGz,
+			"mytool-1.2.3-darwin-arm64.tar.gz": darwinArm64TarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	imp := NewImporter(mockClient)
+
+	result, err := imp.ImportPackage(gCtx, "https://github.com/example/mytool", "", &bytes.Buffer{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "mytool", result.PackageName)
+	assert.Equal(t, "1.2.3", result.Version)
+}
+
+func TestImportPackageWithCustomName(t *testing.T) {
+	gCtx := makeEmptyGrabContext(t)
+
+	linuxAmd64TarGz := createTestTarGz(map[string]string{
+		"my-custom-tool": "binary content",
+	})
+	linuxArm64TarGz := createTestTarGz(map[string]string{
+		"my-custom-tool": "binary content",
+	})
+	darwinAmd64TarGz := createTestTarGz(map[string]string{
+		"my-custom-tool": "binary content",
+	})
+	darwinArm64TarGz := createTestTarGz(map[string]string{
+		"my-custom-tool": "binary content",
+	})
+
+	release := &github.Release{
+		TagName: "v2.0.0",
+		Assets: []github.Asset{
+			{Name: "mytool-2.0.0-linux-amd64.tar.gz"},
+			{Name: "mytool-2.0.0-linux-arm64.tar.gz"},
+			{Name: "mytool-2.0.0-darwin-amd64.tar.gz"},
+			{Name: "mytool-2.0.0-darwin-arm64.tar.gz"},
+		},
+	}
+
+	mockClient := &MockGitHubClient{
+		latestRelease: release,
+		downloadResponses: map[string][]byte{
+			"mytool-2.0.0-linux-amd64.tar.gz":  linuxAmd64TarGz,
+			"mytool-2.0.0-linux-arm64.tar.gz":  linuxArm64TarGz,
+			"mytool-2.0.0-darwin-amd64.tar.gz": darwinAmd64TarGz,
+			"mytool-2.0.0-darwin-arm64.tar.gz": darwinArm64TarGz,
+		},
+		downloadErrors: map[string]error{},
+	}
+
+	imp := NewImporter(mockClient)
+
+	result, err := imp.ImportPackage(gCtx, "https://github.com/example/mytool", "my-custom-tool", &bytes.Buffer{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "my-custom-tool", result.PackageName)
+	assert.Equal(t, "2.0.0", result.Version)
 }

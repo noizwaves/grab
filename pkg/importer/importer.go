@@ -26,9 +26,17 @@ func NewImporter(githubClient github.Client) *Importer {
 }
 
 func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer) error {
+	_, err := i.ImportPackage(gCtx, url, customPackageName, out)
+
+	return err
+}
+
+func (i *Importer) ImportPackage(
+	gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer,
+) (*ImportResult, error) {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx := context.Background()
@@ -36,10 +44,9 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 
 	release, err := i.githubClient.GetLatestRelease(releaseURL.Organization, releaseURL.Repository)
 	if err != nil {
-		return fmt.Errorf("failed to get release: %w", err)
+		return nil, fmt.Errorf("failed to get release: %w", err)
 	}
 
-	// Detect the patterns from the Release
 	packageName := releaseURL.Repository
 	if customPackageName != "" {
 		packageName = customPackageName
@@ -53,11 +60,26 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 		packageName,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Construct the new binary
-	packageConfig := pkg.ConfigPackage{
+	packageConfig := buildPackageConfig(packageName, releaseURL, detectedPackage)
+
+	packagePath, err := gCtx.SavePackage(&packageConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save package: %w", err)
+	}
+
+	fmt.Fprintf(out, "Package %q saved to %s\n", packageName, packagePath)
+
+	return &ImportResult{
+		PackageName: packageName,
+		Version:     detectedPackage.version,
+	}, nil
+}
+
+func buildPackageConfig(packageName string, releaseURL *GitHubReleaseURL, detected *detectedPackage) pkg.ConfigPackage {
+	return pkg.ConfigPackage{
 		APIVersion: "grab.noizwaves.com/v1alpha1",
 		Kind:       "Package",
 		Metadata: pkg.ConfigPackageMetadata{
@@ -65,39 +87,33 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 		},
 		Spec: pkg.ConfigPackageSpec{
 			GitHubRelease: pkg.ConfigGitHubRelease{
-				Org:          releaseURL.Organization,
-				Repo:         releaseURL.Repository,
-				Name:         detectedPackage.releaseName,
-				VersionRegex: detectedPackage.versionRegex,
-				FileName:     detectedPackage.assets,
-
-				// Use detected embedded binary paths
-				EmbeddedBinaryPath: detectedPackage.embeddedBinaryPaths,
+				Org:                releaseURL.Organization,
+				Repo:               releaseURL.Repository,
+				Name:               detected.releaseName,
+				VersionRegex:       detected.versionRegex,
+				FileName:           detected.assets,
+				EmbeddedBinaryPath: detected.embeddedBinaryPaths,
 			},
 			Program: pkg.ConfigProgram{
-				// Assume binary uses a --version flag and not a subcommand
-				VersionArgs: []string{"--version"},
-				// Assume binary printed version regex matches tag regex
-				VersionRegex: detectedPackage.versionRegex,
+				VersionArgs:  []string{"--version"},
+				VersionRegex: detected.versionRegex,
 			},
 		},
 	}
-
-	packagePath, err := gCtx.SavePackage(&packageConfig)
-	if err != nil {
-		return fmt.Errorf("failed to save package: %w", err)
-	}
-
-	fmt.Fprintf(out, "Package %q saved to %s\n", packageName, packagePath)
-
-	return nil
 }
 
 type detectedPackage struct {
 	releaseName         string
 	versionRegex        string
+	version             string
 	assets              map[string]string
 	embeddedBinaryPaths map[string]string
+}
+
+// ImportResult contains the result of a successful import operation.
+type ImportResult struct {
+	PackageName string
+	Version     string
 }
 
 //nolint:funlen,lll
@@ -176,6 +192,7 @@ func detectPackage(ghClient github.Client, org, repo string, release *github.Rel
 
 	return &detectedPackage{
 		releaseName:         releaseName,
+		version:             latestVersion,
 		assets:              fileNames,
 		versionRegex:        versionRegex,
 		embeddedBinaryPaths: embeddedBinaryPathsMap,
