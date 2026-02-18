@@ -31,7 +31,9 @@ func (i *Importer) Import(gCtx *pkg.GrabContext, url string, customPackageName s
 	return err
 }
 
-func (i *Importer) ImportPackage(gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer) (*ImportResult, error) {
+func (i *Importer) ImportPackage(
+	gCtx *pkg.GrabContext, url string, customPackageName string, out io.Writer,
+) (*ImportResult, error) {
 	releaseURL, err := ParseGitHubReleaseURL(url)
 	if err != nil {
 		return nil, err
@@ -45,7 +47,6 @@ func (i *Importer) ImportPackage(gCtx *pkg.GrabContext, url string, customPackag
 		return nil, fmt.Errorf("failed to get release: %w", err)
 	}
 
-	// Detect the patterns from the Release
 	packageName := releaseURL.Repository
 	if customPackageName != "" {
 		packageName = customPackageName
@@ -62,32 +63,7 @@ func (i *Importer) ImportPackage(gCtx *pkg.GrabContext, url string, customPackag
 		return nil, err
 	}
 
-	// Construct the new binary
-	packageConfig := pkg.ConfigPackage{
-		APIVersion: "grab.noizwaves.com/v1alpha1",
-		Kind:       "Package",
-		Metadata: pkg.ConfigPackageMetadata{
-			Name: packageName,
-		},
-		Spec: pkg.ConfigPackageSpec{
-			GitHubRelease: pkg.ConfigGitHubRelease{
-				Org:          releaseURL.Organization,
-				Repo:         releaseURL.Repository,
-				Name:         detectedPackage.releaseName,
-				VersionRegex: detectedPackage.versionRegex,
-				FileName:     detectedPackage.assets,
-
-				// Use detected embedded binary paths
-				EmbeddedBinaryPath: detectedPackage.embeddedBinaryPaths,
-			},
-			Program: pkg.ConfigProgram{
-				// Assume binary uses a --version flag and not a subcommand
-				VersionArgs: []string{"--version"},
-				// Assume binary printed version regex matches tag regex
-				VersionRegex: detectedPackage.versionRegex,
-			},
-		},
-	}
+	packageConfig := buildPackageConfig(packageName, releaseURL, detectedPackage)
 
 	packagePath, err := gCtx.SavePackage(&packageConfig)
 	if err != nil {
@@ -100,6 +76,30 @@ func (i *Importer) ImportPackage(gCtx *pkg.GrabContext, url string, customPackag
 		PackageName: packageName,
 		Version:     detectedPackage.version,
 	}, nil
+}
+
+func buildPackageConfig(packageName string, releaseURL *GitHubReleaseURL, detected *detectedPackage) pkg.ConfigPackage {
+	return pkg.ConfigPackage{
+		APIVersion: "grab.noizwaves.com/v1alpha1",
+		Kind:       "Package",
+		Metadata: pkg.ConfigPackageMetadata{
+			Name: packageName,
+		},
+		Spec: pkg.ConfigPackageSpec{
+			GitHubRelease: pkg.ConfigGitHubRelease{
+				Org:                releaseURL.Organization,
+				Repo:               releaseURL.Repository,
+				Name:               detected.releaseName,
+				VersionRegex:       detected.versionRegex,
+				FileName:           detected.assets,
+				EmbeddedBinaryPath: detected.embeddedBinaryPaths,
+			},
+			Program: pkg.ConfigProgram{
+				VersionArgs:  []string{"--version"},
+				VersionRegex: detected.versionRegex,
+			},
+		},
+	}
 }
 
 type detectedPackage struct {
